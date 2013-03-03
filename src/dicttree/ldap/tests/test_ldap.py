@@ -209,11 +209,9 @@ class TestLDAPConnection(TestCase):
         self.assertItemsEqual(self.ENTRIES.keys(), self.con.keys())
 
     def test_values(self):
-        self.assertEqual(sorted((self.con[dn] for dn in self.ENTRIES),
-                                key=lambda x: x.name),
-                         sorted(self.con.values(),
-                                key=lambda x: x.name))
+        self.assertItemsEqual(self.ENTRIES.keys(),
+                              (node.name for node in self.con.values()))
 
     def test_items(self):
-        self.assertEqual(sorted((dn, self.con[dn]) for dn in self.ENTRIES),
-                         sorted(self.con.items()))
+        self.assertItemsEqual(((dn, dn) for dn in self.ENTRIES.keys()),
+                              ((dn, node.name) for dn, node in self.con.items()))

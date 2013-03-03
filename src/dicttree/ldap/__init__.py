@@ -6,6 +6,12 @@ from ldap import SCOPE_SUBTREE
 from ldap.ldapobject import LDAPObject
 
 
+class Attributes(object):
+    def __init__(self, node=None):
+        if node is not None:
+            self.node = node
+
+
 class Node(object):
     def __init__(self, name=None, attrs=()):
         self.name = name
@@ -110,5 +116,5 @@ class ValuesView(DictView):
     def __iter__(self):
         dct = self.dct
         return (Node(name=x[0][0], attrs=x[0][1]) for x in
-                dct._search(dct.base_dn, ldap.SCOPE_SUBTREE)
+                dct._search(dct.base_dn, ldap.SCOPE_SUBTREE, attrlist=[''])
                 if x[0][0] != dct.base_dn)
