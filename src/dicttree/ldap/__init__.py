@@ -44,7 +44,8 @@ class Connection(object):
 
     def __contains__(self, dn):
         try:
-            return dn == self._ldap.search_s(dn, SCOPE_BASE)[0][0]
+            return dn == self._ldap.search_s(dn, SCOPE_BASE,
+                                             attrlist=[''])[0][0]
         except ldap.NO_SUCH_OBJECT:
             return False
 
