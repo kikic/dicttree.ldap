@@ -1,98 +1,24 @@
 import ldap
-import os
-import time
 
 from itertools import chain
-from ldap.ldapobject import LDAPObject
-from subprocess import Popen, PIPE
 from unittest import TestCase
 
 from dicttree.ldap import Connection
 from dicttree.ldap import Node
 
-
-def setUpModule():
-    """setup global SLAPD process and LDAP connection
-
-    ldap data dir is wiped and a fresh base dn added. In case of
-    errors the SLAPD process is supposed to be killed.
-    """
-    global SLAPD, LDAP
-
-    # ensure ldap dirs exist
-    datadir = 'var/openldap-data'
-    for x in (datadir, 'var/log', 'var/run'):
-        if not os.path.exists(x):
-            os.makedirs(x)
-
-    # wipe ldap data dir and empty logfile (enable tailf)
-    dbfiles = os.listdir(datadir)
-    for x in dbfiles:
-        os.unlink(datadir + '/' + x)
-    with open('var/log/slapd.log', 'w') as f:
-        f.truncate(0)
-
-    # start ldap server
-    # loglevels for -d
-    # 1      (0x1 trace) trace function calls
-    # 2      (0x2 packets) debug packet handling
-    # 4      (0x4 args) heavy trace debugging (function args)
-    # 8      (0x8 conns) connection management
-    # 16     (0x10 BER) print out packets sent and received
-    # 32     (0x20 filter) search filter processing
-    # 64     (0x40 config) configuration file processing
-    # 128    (0x80 ACL) access control list processing
-    # 256    (0x100 stats) connections, LDAP operations, results (recommended)
-    # 512    (0x200 stats2) stats log entries sent
-    # 1024   (0x400 shell) print communication with shell backends
-    # 2048   (0x800 parse) entry parsing
-    SLAPD = Popen(["nixenv/libexec/slapd",
-                   "-f", "etc/openldap/slapd.conf",
-                   "-d", "stats",
-                   "-s", "0",
-                   "-h", "ldapi://var%2Frun%2Fldapi"], stdout=PIPE, stderr=PIPE)
-
-    # wait for ldap to appear
-    waited = 0
-    while True:
-        try:
-            LDAP = LDAPObject('ldapi://var%2Frun%2Fldapi')
-            LDAP.bind_s('cn=root,o=o', 'secret')
-        except:
-            if waited > 10:
-                tearDownModule()
-                raise
-            time.sleep(0.1)
-            waited = waited + 1
-        else:
-            break
-
-    # add base dn
-    try:
-        LDAP.add_s('o=o', (('o', 'o'),
-                           ('objectClass', 'organization'),))
-    except:
-        tearDownModule()
-        raise
+from dicttree.ldap.tests import fixtures
 
 
-def tearDownModule():
-    """make sure ldap is killed before we return
-    """
-    global SLAPD
-    SLAPD.kill()
-    SLAPD.wait()
-
-
+@fixtures.slapd
 class TestLdapConnectivity(TestCase):
     """A simple test to ensure ldap is running and binding works
     """
     def test_connectivity(self):
-        global LDAP
-        LDAP.bind_s('cn=root,o=o', 'secret')
-        self.assertEqual(LDAP.whoami_s(), 'dn:cn=root,o=o')
+        self.slapd.con.bind_s('cn=root,o=o', 'secret')
+        self.assertEqual(self.slapd.con.whoami_s(), 'dn:cn=root,o=o')
 
 
+@fixtures.slapd
 class TestLDAPConnection(TestCase):
     ENTRIES = {
         'cn=cn0,o=o': (('cn', ['cn0']),
@@ -107,8 +33,7 @@ class TestLDAPConnection(TestCase):
 
     @classmethod
     def setUpClass(self):
-        global LDAP
-        self.ldap = LDAP
+        self.ldap = self.slapd.con
         self.con = Connection(uri='ldapi://var%2Frun%2Fldapi',
                               base_dn='o=o',
                               bind_dn='cn=root,o=o',
@@ -127,7 +52,7 @@ class TestLDAPConnection(TestCase):
                    chain(self.ENTRIES, self.ADDITIONAL)]:
             try:
                 self.ldap.result(id)
-            except ldap.LDAPError:
+            except ldap.NO_SUCH_OBJECT:
                 pass
 
     def test_attrlist_and_attrsonly(self):
