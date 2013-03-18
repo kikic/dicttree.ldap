@@ -5,6 +5,8 @@ from ldap import SCOPE_ONELEVEL
 from ldap import SCOPE_SUBTREE
 from ldap.ldapobject import LDAPObject
 
+import copy
+import random
 
 class Attributes(object):
     def __init__(self, node=None):
@@ -97,7 +99,73 @@ class Directory(object):
     def values(self):
         return ValuesView(directory=self)
 
+    def __len__(self):
+	return sum(1 for i in iter(self))
+               
+    def clear(self):
+	for k in self.keys():
+	    del self[k]
+	    
+    def copy(self):
+	new_copy = copy.copy(self)
+	return new_copy
+     
+    def get(self, key, default=None):
+	try:
+            entry = self._ldap.search_s(key, SCOPE_BASE)[0]
+        except ldap.NO_SUCH_OBJECT:
+            return default
+        node = Node(name=key, attrs=entry[1])
+        return node
 
+    def pop(self, key, default=None):
+        try:
+            entry = self._ldap.search_s(key, SCOPE_BASE)[0]
+        except ldap.NO_SUCH_OBJECT:
+	    if default is None:
+		raise KeyError(key)
+            return default
+        node = Node(name=key, attrs=entry[1])
+        self.__delitem__(key)    
+        return node        
+        
+    def popitem(self):
+	if not self:
+	  raise KeyError
+	keys_view = self.keys()
+	keys_enum = enumerate(iter(keys_view))
+	random_keys = random.shuffle(keys_enum)
+	random_key = random_keys[0]
+	node = self.get(random_key)
+	self.__delitem__(node.name)
+	return node
+	
+    def setdefault(self, key, default=None):
+	try:
+            entry = self._ldap.search_s(key, SCOPE_BASE)[0]    
+        except ldap.NO_SUCH_OBJECT:
+	    if default is not None and type(default) is Node:
+		self.__setitem__(default.name, default)
+		return default
+	    else:
+		return None
+	node = Node(name=key, attrs=entry[1])
+	return node
+	    
+    def update(self, *args, **kwargs):
+	if type(args[0]) is Node:
+	    return True
+	else:
+	    return False
+	addlist = node.attrs.items()
+        try:
+            self._ldap.add_s(dn, addlist)
+        except ldap.ALREADY_EXISTS:
+            raise KeyError(dn)
+	return None
+	
+	
+	
 class DictView(object):
     def __init__(self, directory):
         self.directory = directory

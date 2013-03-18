@@ -78,3 +78,86 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
     def test_items(self):
         self.assertItemsEqual(((dn, dn) for dn in self.ENTRIES.keys()),
                               ((dn, node.name) for dn, node in self.dir.items()))
+
+    def test_len(self):
+	def delete():
+            del self.con['cn=cn0,o=o']
+	
+	dn1 = 'cn=cn0,o=o'
+        node1 = Node(name=dn1, attrs=self.ENTRIES[dn1])
+        def addnode1():
+            self.con[dn1] = node1
+
+        dn2 = 'cn=cn2,o=o'
+        node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
+        def addnode2():
+            self.con[dn2] = node2
+
+	self.assertEqual(len(self.ENTRIES), len(self.con))
+	delete()
+	self.assertTrue(len(self.ENTRIES) > len(self.con))
+        addnode1()
+        addnode2()
+        self.assertTrue(len(self.ENTRIES) < len(self.con))
+      
+    def test_clear(self):
+	self.assertItemsEqual(self.ENTRIES.keys(), self.con)
+	self.con.clear()
+	self.assertEqual(0, len(self.con))
+	self.assertEqual([('o=o', {})], self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['']))
+      
+    def test_copy(self):
+	self.assertItemsEqual(self.ENTRIES.keys(), self.con.copy())
+	self.assertItemsEqual(self.con, self.con.copy())
+      
+    def test_getkeydefault(self):
+	dn = 'cn=cn0,o=o'
+	fail = 'cn=fail,o=o'
+	default = 'HubbaBubba'
+
+        self.assertEqual(self.con[dn], self.con.get(dn))
+	self.assertEqual(None, self.con.get(fail))
+	self.assertEqual(default, self.con.get(fail, default))
+      
+    def test_popkeydefault(self):
+	dn = 'cn=cn0,o=o'
+	node = Node(name=dn, attrs=self.ENTRIES[dn])
+	fail = 'cn=fail,o=o'
+	default = 'HubbaBubba'
+	
+	self.assertEqual(node, self.con.pop(dn))
+	self.assertFalse(dn in self.con)
+	""" if default value is set to None, KeyError is raised, check if this is ok! """
+	self.assertEqual(default, self.con.pop(fail, default))
+	""" lambda turns lookup into a callable object. """
+	self.assertRaises(KeyError, lambda: self.con.pop(fail))
+      
+      
+    #def test_popitem(self):
+	#node = self.con.popitem()
+	#self.assertTrue(node.name in self.ENTRIES.keys())
+	#node = self.con.popitem()
+	#self.assertTrue(node.name in self.ENTRIES.keys())
+	#self.assertRaises(KeyError, lambda: self.con.popitem())
+         
+      
+    def test_setdefault(self):
+	dn = 'cn=cn0,o=o'
+	node = Node(name=dn, attrs=self.ENTRIES[dn])
+	dn2 = 'cn=cn2,o=o'
+	node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
+	fail = 'cn=fail,o=o'
+	
+	self.assertEqual(node, self.con.setdefault(dn))
+	""" how to insert a None value??? """
+	self.assertEqual(None, self.con.setdefault(fail))
+	""" default has to be node.attr.items """
+	self.assertEqual(node2, self.con.setdefault(fail, node2))
+      
+    def test_update(self):
+	dn = 'cn=cn0,o=o'	
+	val = {'objectClass': ['organizationalRole'], 'cn': ['cn3']}
+	node = Node(name=dn, attrs=val)
+	
+	self.assertTrue(self.con.update(node))
+    	#self.assertEqual(val, self.con.update(dn, val))
