@@ -99,23 +99,24 @@ class Connection(object):
 
 
 class DictView(object):
-    def __init__(self, dct):
-        self.dct = dct
+    def __init__(self, connection):
+        self.connection = connection
 
 
 class ItemsView(DictView):
     def __iter__(self):
-        return ((node.name, node) for node in ValuesView(self.dct))
+        return ((node.name, node) for node in ValuesView(self.connection))
 
 
 class KeysView(DictView):
     def __iter__(self):
-        return iter(self.dct)
+        return iter(self.connection)
 
 
 class ValuesView(DictView):
     def __iter__(self):
-        dct = self.dct
+        connection = self.connection
         return (Node(name=x[0][0], attrs=x[0][1]) for x in
-                dct._search(dct.base_dn, ldap.SCOPE_SUBTREE, attrlist=[''])
-                if x[0][0] != dct.base_dn)
+                connection._search(connection.base_dn,
+                                   ldap.SCOPE_SUBTREE, attrlist=[''])
+                if x[0][0] != connection.base_dn)
