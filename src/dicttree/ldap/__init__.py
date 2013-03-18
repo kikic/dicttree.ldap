@@ -34,7 +34,7 @@ class Node(object):
         return '<ldap node dn="%s">' % (self.name,)
 
 
-class Connection(object):
+class Directory(object):
     """XXX: this could be without base_dn, not supporting iteration
     """
     def __init__(self, uri, base_dn, bind_dn, pw):
@@ -89,34 +89,34 @@ class Connection(object):
                 yield data
 
     def items(self):
-        return ItemsView(connection=self)
+        return ItemsView(directory=self)
 
     def keys(self):
-        return KeysView(connection=self)
+        return KeysView(directory=self)
 
     def values(self):
-        return ValuesView(connection=self)
+        return ValuesView(directory=self)
 
 
 class DictView(object):
-    def __init__(self, connection):
-        self.connection = connection
+    def __init__(self, directory):
+        self.directory = directory
 
 
 class ItemsView(DictView):
     def __iter__(self):
-        return ((node.name, node) for node in ValuesView(self.connection))
+        return ((node.name, node) for node in ValuesView(self.directory))
 
 
 class KeysView(DictView):
     def __iter__(self):
-        return iter(self.connection)
+        return iter(self.directory)
 
 
 class ValuesView(DictView):
     def __iter__(self):
-        connection = self.connection
+        directory = self.directory
         return (Node(name=x[0][0], attrs=x[0][1]) for x in
-                connection._search(connection.base_dn,
+                directory._search(directory.base_dn,
                                    ldap.SCOPE_SUBTREE, attrlist=[''])
-                if x[0][0] != connection.base_dn)
+                if x[0][0] != directory.base_dn)
