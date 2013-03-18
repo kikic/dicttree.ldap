@@ -89,13 +89,13 @@ class Connection(object):
                 yield data
 
     def items(self):
-        return ItemsView(self)
+        return ItemsView(connection=self)
 
     def keys(self):
-        return KeysView(self)
+        return KeysView(connection=self)
 
     def values(self):
-        return ValuesView(self)
+        return ValuesView(connection=self)
 
 
 class DictView(object):
