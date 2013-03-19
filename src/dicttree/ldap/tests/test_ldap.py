@@ -81,43 +81,43 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 
     def test_len(self):
 	def delete():
-            del self.con['cn=cn0,o=o']
+            del self.dir['cn=cn0,o=o']
 	
 	dn1 = 'cn=cn0,o=o'
         node1 = Node(name=dn1, attrs=self.ENTRIES[dn1])
         def addnode1():
-            self.con[dn1] = node1
+            self.dir[dn1] = node1
 
         dn2 = 'cn=cn2,o=o'
         node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
         def addnode2():
-            self.con[dn2] = node2
+            self.dir[dn2] = node2
 
-	self.assertEqual(len(self.ENTRIES), len(self.con))
+	self.assertEqual(len(self.ENTRIES), len(self.dir))
 	delete()
-	self.assertTrue(len(self.ENTRIES) > len(self.con))
+	self.assertTrue(len(self.ENTRIES) > len(self.dir))
         addnode1()
         addnode2()
-        self.assertTrue(len(self.ENTRIES) < len(self.con))
+        self.assertTrue(len(self.ENTRIES) < len(self.dir))
       
     def test_clear(self):
-	self.assertItemsEqual(self.ENTRIES.keys(), self.con)
-	self.con.clear()
-	self.assertEqual(0, len(self.con))
+	self.assertItemsEqual(self.ENTRIES.keys(), self.dir)
+	self.dir.clear()
+	self.assertEqual(0, len(self.dir))
 	self.assertEqual([('o=o', {})], self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['']))
       
     def test_copy(self):
-	self.assertItemsEqual(self.ENTRIES.keys(), self.con.copy())
-	self.assertItemsEqual(self.con, self.con.copy())
+	self.assertItemsEqual(self.ENTRIES.keys(), self.dir.copy())
+	self.assertItemsEqual(self.dir, self.dir.copy())
       
     def test_getkeydefault(self):
 	dn = 'cn=cn0,o=o'
 	fail = 'cn=fail,o=o'
 	default = 'HubbaBubba'
 
-        self.assertEqual(self.con[dn], self.con.get(dn))
-	self.assertEqual(None, self.con.get(fail))
-	self.assertEqual(default, self.con.get(fail, default))
+        self.assertEqual(self.dir[dn], self.dir.get(dn))
+	self.assertEqual(None, self.dir.get(fail))
+	self.assertEqual(default, self.dir.get(fail, default))
       
     def test_popkeydefault(self):
 	dn = 'cn=cn0,o=o'
@@ -125,20 +125,20 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	fail = 'cn=fail,o=o'
 	default = 'HubbaBubba'
 	
-	self.assertEqual(node, self.con.pop(dn))
-	self.assertFalse(dn in self.con)
+	self.assertEqual(node, self.dir.pop(dn))
+	self.assertFalse(dn in self.dir)
 	""" if default value is set to None, KeyError is raised, check if this is ok! """
-	self.assertEqual(default, self.con.pop(fail, default))
+	self.assertEqual(default, self.dir.pop(fail, default))
 	""" lambda turns lookup into a callable object. """
-	self.assertRaises(KeyError, lambda: self.con.pop(fail))
+	self.assertRaises(KeyError, lambda: self.dir.pop(fail))
       
       
     #def test_popitem(self):
-	#node = self.con.popitem()
+	#node = self.dir.popitem()
 	#self.assertTrue(node.name in self.ENTRIES.keys())
-	#node = self.con.popitem()
+	#node = self.dir.popitem()
 	#self.assertTrue(node.name in self.ENTRIES.keys())
-	#self.assertRaises(KeyError, lambda: self.con.popitem())
+	#self.assertRaises(KeyError, lambda: self.dir.popitem())
          
       
     def test_setdefault(self):
@@ -148,16 +148,16 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
 	fail = 'cn=fail,o=o'
 	
-	self.assertEqual(node, self.con.setdefault(dn))
+	self.assertEqual(node, self.dir.setdefault(dn))
 	""" how to insert a None value??? """
-	self.assertEqual(None, self.con.setdefault(fail))
+	self.assertEqual(None, self.dir.setdefault(fail))
 	""" default has to be node.attr.items """
-	self.assertEqual(node2, self.con.setdefault(fail, node2))
+	self.assertEqual(node2, self.dir.setdefault(fail, node2))
       
     def test_update(self):
 	dn = 'cn=cn0,o=o'	
 	val = {'objectClass': ['organizationalRole'], 'cn': ['cn3']}
 	node = Node(name=dn, attrs=val)
 	
-	self.assertTrue(self.con.update(node))
-    	#self.assertEqual(val, self.con.update(dn, val))
+	self.assertTrue(self.dir.update(node))
+    	#self.assertEqual(val, self.dir.update(dn, val))
