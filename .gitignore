@@ -1,4 +1,6 @@
+*~
 *,cover
+*.egg-info
 *.pyc
 /.*.cfg
 /.coverage
