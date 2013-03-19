@@ -4,7 +4,7 @@
 with import <nixpkgs> {};
 
 buildEnv {
-  name = "dicttree-hydra-dev-env";
+  name = "dicttree-ldap-dev-env";
   paths = [
     openldap
     python27
