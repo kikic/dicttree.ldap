@@ -107,8 +107,12 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	self.assertEqual([('o=o', {})], self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['']))
       
     def test_copy(self):
-	self.assertItemsEqual(self.ENTRIES.keys(), self.dir.copy())
-	self.assertItemsEqual(self.dir, self.dir.copy())
+	dn = 'cn=cn0,o=o'
+	copy = self.dir.copy()
+	self.assertItemsEqual(self.ENTRIES.keys(), copy)
+	self.assertItemsEqual(self.dir, copy)
+	del self.dir[dn]
+	self.assertItemsEqual(self.dir, copy)
       
     def test_getkeydefault(self):
 	dn = 'cn=cn0,o=o'
@@ -127,37 +131,47 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	
 	self.assertEqual(node, self.dir.pop(dn))
 	self.assertFalse(dn in self.dir)
-	""" if default value is set to None, KeyError is raised, check if this is ok! """
 	self.assertEqual(default, self.dir.pop(fail, default))
 	""" lambda turns lookup into a callable object. """
 	self.assertRaises(KeyError, lambda: self.dir.pop(fail))
-      
-      
-    #def test_popitem(self):
-	#node = self.dir.popitem()
-	#self.assertTrue(node.name in self.ENTRIES.keys())
-	#node = self.dir.popitem()
-	#self.assertTrue(node.name in self.ENTRIES.keys())
-	#self.assertRaises(KeyError, lambda: self.dir.popitem())
-         
-      
+            
+    def test_popitem(self):
+	nodeTupel = self.dir.popitem()
+	self.assertTrue(nodeTupel[0] in self.ENTRIES.keys())
+	nodeTupel = self.dir.popitem()
+	self.assertTrue(nodeTupel[0] in self.ENTRIES.keys())
+	self.assertRaises(KeyError, lambda: self.dir.popitem())
+               
     def test_setdefault(self):
 	dn = 'cn=cn0,o=o'
-	node = Node(name=dn, attrs=self.ENTRIES[dn])
 	dn2 = 'cn=cn2,o=o'
+	node = Node(name=dn, attrs=self.ENTRIES[dn])	
 	node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
 	fail = 'cn=fail,o=o'
 	
 	self.assertEqual(node, self.dir.setdefault(dn))
-	""" how to insert a None value??? """
 	self.assertEqual(None, self.dir.setdefault(fail))
-	""" default has to be node.attr.items """
+	""" default has to be a Node """
 	self.assertEqual(node2, self.dir.setdefault(fail, node2))
+	self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail, fail))
       
     def test_update(self):
-	dn = 'cn=cn0,o=o'	
+	dn = 'cn=cn0,o=o'
 	val = {'objectClass': ['organizationalRole'], 'cn': ['cn3']}
 	node = Node(name=dn, attrs=val)
+	dir2 = Directory(uri='ldapi://var%2Frun%2Fldapi',
+                             base_dn='o=o',
+                             bind_dn='cn=root,o=o',
+                             pw='secret')	
+	#dir2.popitem()
+	#dir2.popitem()
+	dn2 = 'cn=cn2,o=o'
+	node2 = Node(name=dn2, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn2']} )
+	itemList = [(node.name, node), (node2.name, node2)]
 	
-	self.assertTrue(self.dir.update(node))
-    	#self.assertEqual(val, self.dir.update(dn, val))
+	#self.assertEqual(None, self.dir.update(dir2))
+	#self.assertEqual(node, self.dir[dn])
+	#self.assertEqual(None, self.dir.update(itemList))
+	#self.assertEqual(node2, self.dir[dn2])
+	
+    	

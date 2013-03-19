@@ -100,71 +100,60 @@ class Directory(object):
         return ValuesView(directory=self)
 
     def __len__(self):
-	return sum(1 for i in iter(self))
+	""" alternative - ask LDAP for length """
+	return sum(1 for x in iter(self))
                
     def clear(self):
+	""" see if just all top level nodes can be deleted """
+	""" alternative - LDAP recursive delete """
 	for k in self.keys():
 	    del self[k]
 	    
     def copy(self):
-	new_copy = copy.copy(self)
-	return new_copy
+	return copy.copy(self)
      
     def get(self, key, default=None):
 	try:
-            entry = self._ldap.search_s(key, SCOPE_BASE)[0]
-        except ldap.NO_SUCH_OBJECT:
-            return default
-        node = Node(name=key, attrs=entry[1])
-        return node
+            return self[key] 
+        except KeyError:
+            return default        
 
     def pop(self, key, default=None):
         try:
-            entry = self._ldap.search_s(key, SCOPE_BASE)[0]
-        except ldap.NO_SUCH_OBJECT:
+            node = self[key]
+            del self[key]
+        except KeyError:
 	    if default is None:
 		raise KeyError(key)
-            return default
-        node = Node(name=key, attrs=entry[1])
-        self.__delitem__(key)    
+            return default        
         return node        
         
     def popitem(self):
 	if not self:
 	  raise KeyError
-	keys_view = self.keys()
-	keys_enum = enumerate(iter(keys_view))
-	random_keys = random.shuffle(keys_enum)
-	random_key = random_keys[0]
-	node = self.get(random_key)
-	self.__delitem__(node.name)
-	return node
+	key = next(iter(self))
+	node = self[key]
+	del self[key]
+	return (key, node)
 	
     def setdefault(self, key, default=None):
 	try:
-            entry = self._ldap.search_s(key, SCOPE_BASE)[0]    
-        except ldap.NO_SUCH_OBJECT:
-	    if default is not None and type(default) is Node:
-		self.__setitem__(default.name, default)
-		return default
-	    else:
+            return self[key]
+        except KeyError:
+	    if default is None:
 		return None
-	node = Node(name=key, attrs=entry[1])
-	return node
-	    
-    def update(self, *args, **kwargs):
-	if type(args[0]) is Node:
-	    return True
-	else:
-	    return False
-	addlist = node.attrs.items()
-        try:
-            self._ldap.add_s(dn, addlist)
-        except ldap.ALREADY_EXISTS:
-            raise KeyError(dn)
+	    self[default.name] = default
+	    return default
+
+    def update(self, other):
+	try:
+	    items = other.items()
+	except AttributeError:
+	    items = other
+	for key, node in items:
+	    del self[key]
+	    self[key] = node
 	return None
-	
-	
 	
 class DictView(object):
     def __init__(self, directory):
