@@ -18,6 +18,9 @@ test-nose: bin/nosetests
 	rm -f .coverage
 	./bin/nosetests -w . --with-cov --cover-branches --cover-package=dicttree.ldap
 
+pyoc-clean:
+	find . -name '*.py[oc]' -print0 |xargs -0 rm
+
 check: test-nose
 
 update-ldap-schema:
