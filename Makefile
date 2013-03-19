@@ -39,11 +39,11 @@ var-clean:
 	rm -fR var/*
 
 check: var var-clean bin/nosetests
-	./bin/nosetests -vv -w . --processes=4 ${ARGS}
+	./bin/nosetests -v -w . --processes=4 ${ARGS}
 
 coverage: var var-clean bin/nosetests
 	rm -f .coverage
-	./bin/nosetests -vv -w . --with-cov --cover-branches --cover-package=dicttree.ldap ${ARGS}
+	./bin/nosetests -v -w . --with-cov --cover-branches --cover-package=dicttree.ldap ${ARGS}
 
 
 pyoc-clean:
