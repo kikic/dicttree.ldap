@@ -6,9 +6,10 @@ with import <nixpkgs> {};
 buildEnv {
   name = "dicttree-ldap-dev-env";
   paths = [
-    openldap
+    (openldap.override { cyrus_sasl = null; openssl = null; })
     python27
     python27Packages.ipdb
+    python27Packages.ipdbplugin
     python27Packages.ipython
     python27Packages.nose
     python27Packages.coverage

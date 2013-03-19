@@ -5,12 +5,10 @@ from unittest import TestCase
 
 from dicttree.ldap import Directory
 from dicttree.ldap import Node
+from dicttree.ldap.tests import mixins
 
-from dicttree.ldap.tests import fixtures
 
-
-@fixtures.slapd
-class TestLdapConnectivity(TestCase):
+class TestLdapConnectivity(mixins.Slapd, TestCase):
     """A simple test to ensure ldap is running and binding works
     """
     def test_connectivity(self):
@@ -18,8 +16,7 @@ class TestLdapConnectivity(TestCase):
         self.assertEqual(self.ldap.whoami_s(), 'dn:cn=root,o=o')
 
 
-@fixtures.slapd
-class TestLDAPDirectory(TestCase):
+class TestLDAPDirectory(mixins.Slapd, TestCase):
     ENTRIES = {
         'cn=cn0,o=o': (('cn', ['cn0']),
                        ('objectClass', ['organizationalRole'])),
@@ -30,29 +27,6 @@ class TestLDAPDirectory(TestCase):
         'cn=cn2,o=o': (('cn', ['cn2']),
                        ('objectClass', ['organizationalRole'])),
         }
-
-    @classmethod
-    def setUpClass(self):
-        self.dir = Directory(uri='ldapi://var%2Frun%2Fldapi',
-                             base_dn='o=o',
-                             bind_dn='cn=root,o=o',
-                             pw='secret')
-
-    def setUp(self):
-        """Setup entries for this test case
-        """
-        for id in [self.ldap.add(dn, self.ENTRIES[dn]) for dn in self.ENTRIES]:
-            self.ldap.result(id)
-
-    def tearDown(self):
-        """Remove all entries of this test case
-        """
-        for id in [self.ldap.delete(dn) for dn in
-                   chain(self.ENTRIES, self.ADDITIONAL)]:
-            try:
-                self.ldap.result(id)
-            except ldap.NO_SUCH_OBJECT:
-                pass
 
     def test_attrlist_and_attrsonly(self):
         """understanding what theses two are exactly doing

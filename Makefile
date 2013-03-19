@@ -1,3 +1,20 @@
+# loglevels for SLAPD_LOGLEVEL, comma-separated
+# 1      (0x1 trace) trace function calls
+# 2      (0x2 packets) debug packet handling
+# 4      (0x4 args) heavy trace debugging (function args)
+# 8      (0x8 conns) connection management
+# 16     (0x10 BER) print out packets sent and received
+# 32     (0x20 filter) search filter processing
+# 64     (0x40 config) configuration file processing
+# 128    (0x80 ACL) access control list processing
+# 256    (0x100 stats) connections, LDAP operations, results (recommended)
+# 512    (0x200 stats2) stats log entries sent
+# 1024   (0x400 shell) print communication with shell backends
+# 2048   (0x800 parse) entry parsing
+
+export SLAPD_LOGLEVEL := stats
+export KEEP_FAILED := 1
+
 all: check
 
 bootstrap: dev.nix requirements.txt setup.py
@@ -14,17 +31,25 @@ bin/nosetests:
 print-syspath:
 	./bin/python -c 'import sys,pprint;pprint.pprint(sys.path)'
 
-test-nose: bin/nosetests
+var:
+	ln -s $(shell mktemp --tmpdir -d dicttree.ldap-var-XXXXXXXXXX) var
+
+var-clean:
+	rm -fR var/*
+
+coverage: var bin/nosetests
 	rm -f .coverage
-	./bin/nosetests -w . --with-cov --cover-branches --cover-package=dicttree.ldap
+	./bin/nosetests -vv -w . --with-cov --cover-branches --cover-package=dicttree.ldap ${ARGS}
 
 pyoc-clean:
 	find . -name '*.py[oc]' -print0 |xargs -0 rm
 
-check: test-nose
+check: var var-clean bin/nosetests
+	rm -f .coverage
+	./bin/nosetests -vv -w . --processes=4 ${ARGS}
 
 update-ldap-schema:
 	mkdir -p etc/openldap/schema
 	cp nixenv/etc/openldap/schema/* etc/openldap/schema/
 
-.PHONY: all bootstrap print-syspath check test-nose
+.PHONY: all bootstrap check coverage print-syspath pyoc-clean test-nose var-clean
