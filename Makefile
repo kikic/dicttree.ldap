@@ -31,22 +31,23 @@ bin/nosetests:
 print-syspath:
 	./bin/python -c 'import sys,pprint;pprint.pprint(sys.path)'
 
+
 var:
 	ln -s $(shell mktemp --tmpdir -d dicttree.ldap-var-XXXXXXXXXX) var
 
 var-clean:
 	rm -fR var/*
 
-coverage: var bin/nosetests
+check: var var-clean bin/nosetests
+	./bin/nosetests -vv -w . --processes=4 ${ARGS}
+
+coverage: var var-clean bin/nosetests
 	rm -f .coverage
 	./bin/nosetests -vv -w . --with-cov --cover-branches --cover-package=dicttree.ldap ${ARGS}
 
+
 pyoc-clean:
 	find . -name '*.py[oc]' -print0 |xargs -0 rm
-
-check: var var-clean bin/nosetests
-	rm -f .coverage
-	./bin/nosetests -vv -w . --processes=4 ${ARGS}
 
 update-ldap-schema:
 	mkdir -p etc/openldap/schema
