@@ -42,6 +42,7 @@ class FixtureMeta(type):
                 fixture.setUpFixture()
                 fixture.setup = True
             try:
+                fixture.setUpTestCase(testcase)
                 setUpTestCase()
             except Exception, e:
                 sys.stderr.write("""
@@ -83,3 +84,6 @@ class Fixture(object):
     """base class for fixture decorators
     """
     __metaclass__ = FixtureMeta
+
+    def setUpTestCase(fixture, testcase):
+        pass

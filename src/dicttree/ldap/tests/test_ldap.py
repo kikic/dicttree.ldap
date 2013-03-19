@@ -14,8 +14,8 @@ class TestLdapConnectivity(TestCase):
     """A simple test to ensure ldap is running and binding works
     """
     def test_connectivity(self):
-        self.slapd.con.bind_s('cn=root,o=o', 'secret')
-        self.assertEqual(self.slapd.con.whoami_s(), 'dn:cn=root,o=o')
+        self.ldap.bind_s('cn=root,o=o', 'secret')
+        self.assertEqual(self.ldap.whoami_s(), 'dn:cn=root,o=o')
 
 
 @fixtures.slapd
@@ -33,7 +33,6 @@ class TestLDAPDirectory(TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.ldap = self.slapd.con
         self.dir = Directory(uri='ldapi://var%2Frun%2Fldapi',
                              base_dn='o=o',
                              bind_dn='cn=root,o=o',

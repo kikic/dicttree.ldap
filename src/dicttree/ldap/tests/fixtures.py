@@ -55,8 +55,8 @@ class slapd(Fixture):
         waited = 0
         while True:
             try:
-                fixture.con = LDAPObject('ldapi://var%2Frun%2Fldapi')
-                fixture.con.bind_s('cn=root,o=o', 'secret')
+                fixture.ldap = LDAPObject('ldapi://var%2Frun%2Fldapi')
+                fixture.ldap.bind_s('cn=root,o=o', 'secret')
             except:
                 if waited > 10:
                     fixture.tearDownFixture()
@@ -68,7 +68,7 @@ class slapd(Fixture):
 
         # add base dn
         try:
-            fixture.con.add_s('o=o', (('o', 'o'),
+            fixture.ldap.add_s('o=o', (('o', 'o'),
                                       ('objectClass', 'organization'),))
         except:
             fixture.tearDownFixture()
@@ -80,3 +80,8 @@ class slapd(Fixture):
         """
         fixture.process.kill()
         fixture.process.wait()
+
+    @classmethod
+    def setUpTestCase(fixture, testcase):
+        testcase.slapd = fixture.process
+        testcase.ldap = fixture.ldap
