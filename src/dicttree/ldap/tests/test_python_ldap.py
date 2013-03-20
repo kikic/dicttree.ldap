@@ -28,7 +28,6 @@ class TestAttrlistAttrsonly(mixins.Slapd, unittest.TestCase):
                       'entryCSN': [],
                       'entryDN': [],
                       'entryUUID': [],
-                      'hasSubordinates': [],
                       'modifiersName': [],
                       'modifyTimestamp': [],
                       'structuralObjectClass': [],
