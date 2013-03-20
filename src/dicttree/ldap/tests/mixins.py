@@ -1,6 +1,7 @@
 import itertools
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -8,7 +9,6 @@ import traceback
 import urllib
 
 from ldap.ldapobject import LDAPObject
-from subprocess import Popen, PIPE
 
 from dicttree.ldap import Directory
 
@@ -52,14 +52,14 @@ Error setting up testcase: %s
         self.debug = bool(os.environ.get('DEBUG'))
         self.debugflags = tuple(itertools.chain.from_iterable(
                 iter(('-d', x)) for x in self.loglevel.split(',')))
-        self.slapd = Popen(
+        self.slapd = subprocess.Popen(
             (self.slapdbin,
              "-f", self.slapdconf,
              "-s", "0",
              "-h", "ldapi://ldapi") + self.debugflags,
             cwd=self.basedir,
-            stdout=PIPE if not self.debug else None,
-            stderr=PIPE if not self.debug else None)
+            stdout=subprocess.PIPE if not self.debug else None,
+            stderr=subprocess.PIPE if not self.debug else None)
 
         # wait for ldap to appear
         waited = 0
