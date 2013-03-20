@@ -47,12 +47,20 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
     def test_setitem(self):
         dn = 'cn=cn2,o=o'
         node = Node(name=dn, attrs=self.ADDITIONAL[dn])
+        dn2 = 'cn=cn2,o=o'
+        node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn])
         def addnode():
             self.dir[dn] = node
-
+        def addexisting():
+	    self.dir[dn2] = node2
+            
         addnode()
-        self.assertRaises(KeyError, addnode)
         self.assertEquals(node, self.dir[dn])
+        
+        node_old = self.dir[dn2]
+        addexisting()
+        #self.assertEquals(node_old, self.dir[dn2])
+        #self.assertEquals(node2, self.dir[dn2])
 
     def test_delitem(self):
         def delete():
@@ -150,28 +158,32 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	fail = 'cn=fail,o=o'
 	
 	self.assertEqual(node, self.dir.setdefault(dn))
-	self.assertEqual(None, self.dir.setdefault(fail))
-	""" default has to be a Node """
 	self.assertEqual(node2, self.dir.setdefault(fail, node2))
+	# default has to be a Node
+	self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail))
 	self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail, fail))
       
     def test_update(self):
 	dn = 'cn=cn0,o=o'
-	val = {'objectClass': ['organizationalRole'], 'cn': ['cn3']}
-	node = Node(name=dn, attrs=val)
-	dir2 = Directory(uri='ldapi://var%2Frun%2Fldapi',
-                             base_dn='o=o',
-                             bind_dn='cn=root,o=o',
-                             pw='secret')	
-	#dir2.popitem()
-	#dir2.popitem()
+	node = Node(name=dn, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn0']})
 	dn2 = 'cn=cn2,o=o'
 	node2 = Node(name=dn2, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn2']} )
 	itemList = [(node.name, node), (node2.name, node2)]
+	dir2 = dict(itemList)
 	
-	#self.assertEqual(None, self.dir.update(dir2))
-	#self.assertEqual(node, self.dir[dn])
-	#self.assertEqual(None, self.dir.update(itemList))
-	#self.assertEqual(node2, self.dir[dn2])
+	self.assertEqual(None, self.dir.update(dir2))
+	self.assertEqual(node, self.dir[dn])
+	self.assertEqual(None, self.dir.update(itemList))
+	self.assertEqual(node2, self.dir[dn2])
 	
     	
+    	
+    def test_dictComparation(self):
+	dictA = {'a': 'spam', 'b': 'spam', 'c': 'adsas'}
+	dictB = {1: 'sp'+'am'}
+	dictC = {'a': 'spam', 'bx': 'xxxxspam'}
+	
+	#self.assertTrue(dictA == dictB)
+	self.assertFalse(dictA == dictC)
+	#self.assertTrue(dictA > dictC)
+	self.assertTrue(dictA < dictC)

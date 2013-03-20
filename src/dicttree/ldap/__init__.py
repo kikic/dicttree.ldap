@@ -63,8 +63,9 @@ class Directory(object):
         addlist = node.attrs.items()
         try:
             self._ldap.add_s(dn, addlist)
-        except ldap.ALREADY_EXISTS:
-            raise KeyError(dn)
+        except ldap.ALREADY_EXISTS:    
+	    del self[dn]            
+            self._ldap.add_s(dn, addlist)        
 
     def __delitem__(self, dn):
         try:
@@ -100,48 +101,43 @@ class Directory(object):
         return ValuesView(directory=self)
 
     def __len__(self):
-	""" alternative - ask LDAP for length """
 	return sum(1 for x in iter(self))
                
     def clear(self):
-	""" see if just all top level nodes can be deleted """
-	""" alternative - LDAP recursive delete """
-	for k in self.keys():
-	    del self[k]
+	for dn in self.keys():
+	    del self[dn]
 	    
     def copy(self):
 	return copy.copy(self)
      
-    def get(self, key, default=None):
+    def get(self, dn, default=None):
 	try:
-            return self[key] 
+            return self[dn] 
         except KeyError:
             return default        
 
-    def pop(self, key, default=None):
+    def pop(self, dn, default=None):
         try:
-            node = self[key]
-            del self[key]
+            node = self[dn]
+            del self[dn]
         except KeyError:
 	    if default is None:
-		raise KeyError(key)
+		raise KeyError(dn)
             return default        
         return node        
         
     def popitem(self):
 	if not self:
 	  raise KeyError
-	key = next(iter(self))
-	node = self[key]
-	del self[key]
-	return (key, node)
+	dn = next(iter(self))
+	node = self[dn]
+	del self[dn]
+	return (dn, node)
 	
-    def setdefault(self, key, default=None):
+    def setdefault(self, dn, default=None):
 	try:
-            return self[key]
+            return self[dn]
         except KeyError:
-	    if default is None:
-		return None
 	    self[default.name] = default
 	    return default
 
@@ -150,10 +146,12 @@ class Directory(object):
 	    items = other.items()
 	except AttributeError:
 	    items = other
-	for key, node in items:
-	    del self[key]
-	    self[key] = node
+	for dn, node in items:
+	    self[dn] = node
 	return None
+	
+	#equal, not equal on whole directory - they are the same if keys and items are the same! --implement
+	#comparison gt ls etc 
 	
 class DictView(object):
     def __init__(self, directory):
