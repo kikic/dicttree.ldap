@@ -49,6 +49,7 @@ Error setting up testcase: %s
         self.uri = 'ldapi://' + \
             urllib.quote('/'.join([self.basedir, 'ldapi']), safe='')
         self.loglevel = os.environ.get('SLAPD_LOGLEVEL', '0')
+        self.debug = bool(os.environ.get('DEBUG'))
         self.debugflags = tuple(itertools.chain.from_iterable(
                 iter(('-d', x)) for x in self.loglevel.split(',')))
         self.slapd = Popen(
@@ -57,7 +58,8 @@ Error setting up testcase: %s
              "-s", "0",
              "-h", "ldapi://ldapi") + self.debugflags,
             cwd=self.basedir,
-            stdout=PIPE, stderr=PIPE)
+            stdout=PIPE if not self.debug else None,
+            stderr=PIPE if not self.debug else None)
 
         # wait for ldap to appear
         waited = 0
