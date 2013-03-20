@@ -1,14 +1,14 @@
 import ldap
+import unittest
 
 from itertools import chain
-from unittest import TestCase
 
 from dicttree.ldap import Directory
 from dicttree.ldap import Node
 from dicttree.ldap.tests import mixins
 
 
-class TestLdapConnectivity(mixins.Slapd, TestCase):
+class TestLdapConnectivity(mixins.Slapd, unittest.TestCase):
     """A simple test to ensure ldap is running and binding works
     """
     def test_connectivity(self):
@@ -16,7 +16,7 @@ class TestLdapConnectivity(mixins.Slapd, TestCase):
         self.assertEqual(self.ldap.whoami_s(), 'dn:cn=root,o=o')
 
 
-class TestLDAPDirectory(mixins.Slapd, TestCase):
+class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
     ENTRIES = {
         'cn=cn0,o=o': (('cn', ['cn0']),
                        ('objectClass', ['organizationalRole'])),
@@ -27,41 +27,6 @@ class TestLDAPDirectory(mixins.Slapd, TestCase):
         'cn=cn2,o=o': (('cn', ['cn2']),
                        ('objectClass', ['organizationalRole'])),
         }
-
-    def test_attrlist_and_attrsonly(self):
-        """understanding what theses two are exactly doing
-        """
-        # attrlist=None, [], and ['*'] fetch all normal attributes,
-        # so-called user-attributes
-        self.assertEqual(
-            [('o=o', {'objectClass': ['organization'], 'o': ['o']})],
-            self.ldap.search_s('o=o', ldap.SCOPE_BASE))
-        self.assertEqual(
-            [('o=o', {'objectClass': ['organization'], 'o': ['o']})],
-            self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=[]))
-        self.assertEqual(
-            [('o=o', {'objectClass': ['organization'], 'o': ['o']})],
-            self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['*']))
-
-        # attrlist=['+'] fetches internal attributes, attrsonly=True
-        # skips the values
-        self.assertEqual(
-            [('o=o', {'createTimestamp': [],
-                      'creatorsName': [],
-                      'entryCSN': [],
-                      'entryDN': [],
-                      'entryUUID': [],
-                      'hasSubordinates': [],
-                      'modifiersName': [],
-                      'modifyTimestamp': [],
-                      'structuralObjectClass': [],
-                      'subschemaSubentry': []})],
-            self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['+'], attrsonly=True))
-
-        # attrlist=[''] skips all attributes
-        self.assertEqual(
-            [('o=o', {})],
-            self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['']))
 
     def test_contains(self):
         self.assertTrue('cn=cn0,o=o' in self.dir)
