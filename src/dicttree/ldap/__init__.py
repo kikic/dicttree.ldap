@@ -9,6 +9,8 @@ import copy
 import itertools
 import collections
 
+import ipdb
+
 class Attributes(object):
     def __init__(self, node=None):
         if node is not None:
@@ -164,6 +166,8 @@ class DirView(object):
 	if len(self) != len(other):
 	    return False
 	for x, x2 in itertools.izip(self, other):    
+	    #return (x, x2)
+	    ipdb.set_trace()
 	    if x != x2:
 		return False
 	return True    

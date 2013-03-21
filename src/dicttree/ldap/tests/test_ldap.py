@@ -218,6 +218,9 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	self.assertTrue(self.ENTRIES.keys() == keys)
 	self.assertFalse(self.ENTRIES.keys() != keys)
 	self.assertTrue(items == items)
+	
+	self.assertFalse(items == itemsList)
+	
 	self.assertTrue(items == itemsList)
 	self.assertFalse(items != itemsList)
 	self.assertTrue(values == values)
