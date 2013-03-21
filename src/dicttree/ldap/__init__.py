@@ -28,7 +28,7 @@ class Node(object):
         self.attrs = dict(attrs)
 
     def __eq__(self, other):
-	
+
         return self is other or \
             self.name == other.name and \
             self.attrs == other.attrs
@@ -66,9 +66,9 @@ class Directory(object):
         addlist = node.attrs.items()
         try:
             self._ldap.add_s(dn, addlist)
-        except ldap.ALREADY_EXISTS:    
-	    del self[dn]            
-            self._ldap.add_s(dn, addlist)        
+        except ldap.ALREADY_EXISTS:
+            del self[dn]
+            self._ldap.add_s(dn, addlist)
 
     def __delitem__(self, dn):
         try:
@@ -104,138 +104,138 @@ class Directory(object):
         return ValuesView(directory=self)
 
     def __len__(self):
-	return sum(1 for node in iter(self))
-               
+        return sum(1 for node in iter(self))
+
     def clear(self):
-	for dn in self.keys():
-	    del self[dn]
-	    
+        for dn in self.keys():
+            del self[dn]
+
     def copy(self):
-	return copy.copy(self)
-     
+        return copy.copy(self)
+
     def get(self, dn, default=None):
-	try:
-            return self[dn] 
+        try:
+            return self[dn]
         except KeyError:
-            return default        
+            return default
 
     def pop(self, dn, default=None):
         try:
             node = self[dn]
             del self[dn]
         except KeyError:
-	    if default is None:
-		raise KeyError(dn)
-            return default        
-        return node        
-        
+            if default is None:
+                raise KeyError(dn)
+            return default
+        return node
+
     def popitem(self):
-	if not self:
-	  raise KeyError
-	dn = next(iter(self))
-	node = self[dn]
-	del self[dn]
-	return (dn, node)
-	
+        if not self:
+          raise KeyError
+        dn = next(iter(self))
+        node = self[dn]
+        del self[dn]
+        return (dn, node)
+
     def setdefault(self, dn, default=None):
-	try:
+        try:
             return self[dn]
         except KeyError:
-	    self[default.name] = default
-	    return default
+            self[default.name] = default
+            return default
 
     def update(self, other):
-	try:
-	    items = other.items()
-	except AttributeError:
-	    items = other
-	for dn, node in items:
-	    self[dn] = node
-	return None
-	
+        try:
+            items = other.items()
+        except AttributeError:
+            items = other
+        for dn, node in items:
+            self[dn] = node
+        return None
+
 class DirView(object):
     def __init__(self, directory):
         self.directory = directory
-    
+
     def __len__(self):
-	return sum(1 for x in iter(self))    
-	
+        return sum(1 for x in iter(self))
+
     def __eq__(self, other):
-        if self is other: 
-	    return True   
-	if len(self) != len(other):
-	    return False
-	for x, x2 in itertools.izip(self, other):    
-	    #return (x, x2)
-	    ipdb.set_trace()
-	    if x != x2:
-		return False
-	return True    
-		
+        if self is other:
+            return True
+        if len(self) != len(other):
+            return False
+        for x, x2 in itertools.izip(self, other):
+            #return (x, x2)
+            ipdb.set_trace()
+            if x != x2:
+                return False
+        return True
+
     def __ne__(self, other):
         return not self == other
-        
-        
+
+
 class DirViewSet(DirView, collections.Set):
 
     # must implement contains as first method
     def __contains__(self, other):
-	return other in iter(self)
+        return other in iter(self)
 
-    
+
     #def __and__(self):
-	#pass 
-    
+        #pass
+
     #def __or__(self):
-	#pass  
-        
+        #pass
+
     #def __xor__(self):
-	#pass
-    
+        #pass
+
     #def __sub__(self):
-	#pass
-    
+        #pass
+
     #def isdisjoint(self):
-	#pass
-    
-    
+        #pass
+
+
 
 class ItemsView(DirViewSet):
     def __iter__(self):
         return ((node.name, node) for node in ValuesView(self.directory))
 
     def __contains__(self, other):
-	for x in self:
-	    if x == other:
-		return True
-	return False
-        
-        
+        for x in self:
+            if x == other:
+                return True
+        return False
+
+
     #def __eq__(self, other):
-	#if self is other: 
-	    #return True   
-	#if len(self) != len(other):
-	    #return False
-	#for x, x2 in itertools.izip(self, other):    
-	    #if x[0][0] != x2[0][0] or x[0][1] != x2[0][1]:
-		#return False
-	#return True
+        #if self is other:
+            #return True
+        #if len(self) != len(other):
+            #return False
+        #for x, x2 in itertools.izip(self, other):
+            #if x[0][0] != x2[0][0] or x[0][1] != x2[0][1]:
+                #return False
+        #return True
 
 class KeysView(DirViewSet):
     def __iter__(self):
         return iter(self.directory)
 
     #def __eq__(self, other):
-	# call to the parent class for common equality checks
-	#if not super(KeysView, self).__eq__(other):
-	    #return False
-	# izip uses generators and does not create a third list    
-	#for dn, dn2 in itertools.izip(self, other):
-	    #if dn != dn2:
-		#return False
-	#return True   
-	
-	
+        # call to the parent class for common equality checks
+        #if not super(KeysView, self).__eq__(other):
+            #return False
+        # izip uses generators and does not create a third list
+        #for dn, dn2 in itertools.izip(self, other):
+            #if dn != dn2:
+                #return False
+        #return True
+
+
 class ValuesView(DirView):
     def __iter__(self):
         directory = self.directory
@@ -244,16 +244,16 @@ class ValuesView(DirView):
                                    ldap.SCOPE_SUBTREE, attrlist=[''])
                 if x[0][0] != directory.base_dn)
 
-    #def __contains__(self, other):	
-	#for x in self: 
-	    #if x.name == other.name and x.attrs == other.attrs:
-		#return True
-	#return False  
-                    
+    #def __contains__(self, other):
+        #for x in self:
+            #if x.name == other.name and x.attrs == other.attrs:
+                #return True
+        #return False
+
     #def __eq__(self, other):
-	#if not super(ValuesView, self).__eq__(other):
-	    #return False
-	#for node, node2 in itertools.izip(self, other):
-	    #if node != node2:
-		#return False
-	#return True
+        #if not super(ValuesView, self).__eq__(other):
+            #return False
+        #for node, node2 in itertools.izip(self, other):
+            #if node != node2:
+                #return False
+        #return True
