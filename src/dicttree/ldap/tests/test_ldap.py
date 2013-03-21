@@ -172,22 +172,6 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	self.assertEqual(node, self.dir[dn])
 	self.assertEqual(None, self.dir.update(itemList))
 	self.assertEqual(node2, self.dir[dn2])
-
-	
-    def test_viewcontains(self):
-	dn = 'cn=cn0,o=o'
-	fail = 'cn=fail,o=o'
-        #node = Node(name=dn, attrs=self.ENTRIES[dn])
-        node = next(iter(self.dir.values()))
-        item = (dn, node)
-        
-	self.assertTrue(dn in self.dir.keys())
-	self.assertFalse(dn not in self.dir.keys())
-	self.assertTrue(item in self.dir.items())
-	self.assertFalse(item not in self.dir.items())
-	self.assertTrue(node in self.dir.values())
-	self.assertFalse(node not in self.dir.values())
-	self.assertFalse(fail in self.dir.keys())
 	
     def test_viewlen(self):
 	def delete():
@@ -216,7 +200,17 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         self.assertTrue(len(self.ENTRIES.items()) < len(self.dir.items()))
         self.assertTrue(len(self.ENTRIES.values()) < len(self.dir.values()))
 		
-    def test_equal(self):
+    def test_viewequal(self):
+	
+	dn = 'cn=cn0,o=o'
+        node = Node(name=dn, attrs=self.ENTRIES[dn])
+        dn2 = 'cn=cn0,o=o'
+        node2 = Node(name=dn2, attrs=self.ENTRIES[dn2])
+        itemsList = ((dn, node), (dn2, node2))
+        valuesList = (node, node2)
+        
+        fail = 'cn=fail,o=o'
+	
 	keys = self.dir.keys()
 	items = self.dir.items()
 	values = self.dir.values()
@@ -224,23 +218,37 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	self.assertTrue(self.ENTRIES.keys() == keys)
 	self.assertFalse(self.ENTRIES.keys() != keys)
 	self.assertTrue(items == items)
-	self.assertTrue(self.ENTRIES.items() == items)
-	self.assertFalse(self.ENTRIES.items() != items)
+	self.assertTrue(items == itemsList)
+	self.assertFalse(items != itemsList)
 	self.assertTrue(values == values)
-	self.assertTrue(self.ENTRIES.values() == values)
-	self.assertFalse(self.ENTRIES.values() != values)
+	#self.assertTrue(values == valuesList)
+	#self.assertFalse(self.ENTRIES.values() != values)
 	
 	del self.dir['cn=cn0,o=o']
 	keys= self.dir.keys()
 	items = self.dir.items()
 	values = self.dir.values()
-	self.assertTrue(self.ENTRIES.keys() != keys)
-	self.assertTrue(self.ENTRIES.items() != items)
-	self.assertTrue(self.ENTRIES.values() != values)
+	#self.assertTrue(self.ENTRIES.keys() != keys)
+	#self.assertTrue(self.ENTRIES.items() != items)
+	#self.assertTrue(self.ENTRIES.values() != values)
 	
     
     #def test_notequal(self):
 	#pass
+	
+    def test_viewcontains(self):
+	dn = 'cn=cn0,o=o'
+	fail = 'cn=fail,o=o'
+        node = Node(name=dn, attrs=self.ENTRIES[dn])
+        item = (dn, node)
+        
+	#self.assertTrue(dn in self.dir.keys())
+	#self.assertFalse(dn not in self.dir.keys())
+	#self.assertTrue(item in self.dir.items())
+	#self.assertFalse(item not in self.dir.items())
+	#self.assertTrue(node in self.dir.values())
+	#self.assertFalse(node not in self.dir.values())
+	#self.assertFalse(fail in self.dir.keys())
     
     #def test_and(self):
 	#pass
