@@ -47,20 +47,17 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
     def test_setitem(self):
         dn = 'cn=cn2,o=o'
         node = Node(name=dn, attrs=self.ADDITIONAL[dn])
-        dn2 = 'cn=cn2,o=o'
-        node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn])
+        dn2 = 'cn=cn0,o=o'
+        node2 = Node(name=dn2, attrs={'objectClass': ['applicationProcess'], 'cn': ['cn0']})
         def addnode():
             self.dir[dn] = node
         def addexisting():
 	    self.dir[dn2] = node2
             
         addnode()
-        self.assertEquals(node, self.dir[dn])
-        
-        node_old = self.dir[dn2]
+        self.assertEquals(node, self.dir[dn])        
         addexisting()
-        #self.assertEquals(node_old, self.dir[dn2])
-        #self.assertEquals(node2, self.dir[dn2])
+        self.assertEquals(node2, self.dir[dn2])
 
     def test_delitem(self):
         def delete():
@@ -165,7 +162,7 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
       
     def test_update(self):
 	dn = 'cn=cn0,o=o'
-	node = Node(name=dn, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn0']})
+	node = Node(name=dn, attrs={'objectClass': ['applicationProcess'], 'cn': ['cn0']})
 	dn2 = 'cn=cn2,o=o'
 	node2 = Node(name=dn2, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn2']} )
 	itemList = [(node.name, node), (node2.name, node2)]
@@ -175,15 +172,87 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 	self.assertEqual(node, self.dir[dn])
 	self.assertEqual(None, self.dir.update(itemList))
 	self.assertEqual(node2, self.dir[dn2])
+
 	
-    	
-    	
-    def test_dictComparation(self):
-	dictA = {'a': 'spam', 'b': 'spam', 'c': 'adsas'}
-	dictB = {1: 'sp'+'am'}
-	dictC = {'a': 'spam', 'bx': 'xxxxspam'}
+    def test_viewcontains(self):
+	dn = 'cn=cn0,o=o'
+	fail = 'cn=fail,o=o'
+        #node = Node(name=dn, attrs=self.ENTRIES[dn])
+        node = next(iter(self.dir.values()))
+        item = (dn, node)
+        
+	self.assertTrue(dn in self.dir.keys())
+	self.assertFalse(dn not in self.dir.keys())
+	self.assertTrue(item in self.dir.items())
+	self.assertFalse(item not in self.dir.items())
+	self.assertTrue(node in self.dir.values())
+	self.assertFalse(node not in self.dir.values())
+	self.assertFalse(fail in self.dir.keys())
 	
-	#self.assertTrue(dictA == dictB)
-	self.assertFalse(dictA == dictC)
-	#self.assertTrue(dictA > dictC)
-	self.assertTrue(dictA < dictC)
+    def test_viewlen(self):
+	def delete():
+            del self.dir['cn=cn0,o=o']
+	
+	dn1 = 'cn=cn0,o=o'
+        node1 = Node(name=dn1, attrs=self.ENTRIES[dn1])
+        def addnode1():
+            self.dir[dn1] = node1
+            
+        dn2 = 'cn=cn2,o=o'
+        node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
+        def addnode2():
+            self.dir[dn2] = node2
+
+	self.assertEqual(len(self.ENTRIES.keys()), len(self.dir.keys()))
+	self.assertEqual(len(self.ENTRIES.items()), len(self.dir.items()))
+	self.assertEqual(len(self.ENTRIES.values()), len(self.dir.values()))
+	delete()
+	self.assertTrue(len(self.ENTRIES.keys()) > len(self.dir.keys()))
+	self.assertTrue(len(self.ENTRIES.items()) > len(self.dir.items()))
+	self.assertTrue(len(self.ENTRIES.values()) > len(self.dir.values()))
+	addnode1()
+        addnode2()
+        self.assertTrue(len(self.ENTRIES.keys()) < len(self.dir.keys()))
+        self.assertTrue(len(self.ENTRIES.items()) < len(self.dir.items()))
+        self.assertTrue(len(self.ENTRIES.values()) < len(self.dir.values()))
+		
+    def test_equal(self):
+	keys = self.dir.keys()
+	items = self.dir.items()
+	values = self.dir.values()
+	self.assertTrue(keys == keys)
+	self.assertTrue(self.ENTRIES.keys() == keys)
+	self.assertFalse(self.ENTRIES.keys() != keys)
+	self.assertTrue(items == items)
+	self.assertTrue(self.ENTRIES.items() == items)
+	self.assertFalse(self.ENTRIES.items() != items)
+	self.assertTrue(values == values)
+	self.assertTrue(self.ENTRIES.values() == values)
+	self.assertFalse(self.ENTRIES.values() != values)
+	
+	del self.dir['cn=cn0,o=o']
+	keys= self.dir.keys()
+	items = self.dir.items()
+	values = self.dir.values()
+	self.assertTrue(self.ENTRIES.keys() != keys)
+	self.assertTrue(self.ENTRIES.items() != items)
+	self.assertTrue(self.ENTRIES.values() != values)
+	
+    
+    #def test_notequal(self):
+	#pass
+    
+    #def test_and(self):
+	#pass
+    
+    #def test_or(self):
+	#pass
+    
+    #def test_xor(self):
+	#pass
+    
+    #def test_sub(self):
+	#pass
+    
+    #def test_isdisjoint(self):
+	#pass

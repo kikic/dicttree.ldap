@@ -6,7 +6,7 @@ from ldap import SCOPE_SUBTREE
 from ldap.ldapobject import LDAPObject
 
 import copy
-import random
+import itertools
 
 class Attributes(object):
     def __init__(self, node=None):
@@ -101,7 +101,7 @@ class Directory(object):
         return ValuesView(directory=self)
 
     def __len__(self):
-	return sum(1 for x in iter(self))
+	return sum(1 for node in iter(self))
                
     def clear(self):
 	for dn in self.keys():
@@ -150,23 +150,87 @@ class Directory(object):
 	    self[dn] = node
 	return None
 	
-	#equal, not equal on whole directory - they are the same if keys and items are the same! --implement
-	#comparison gt ls etc 
-	
 class DictView(object):
     def __init__(self, directory):
         self.directory = directory
+    
+    def __len__(self):
+	return sum(1 for x in iter(self))    
+	
+    def __eq__(self, other):
+        if self is other: 
+	    return True   
+	if len(self) != len(other):
+	    return False
+	# izip uses generators and does not create a third list, 
+	# but iterates only over shorter iterable entries and 
+	# disregards trailing values from the longer iterables
+	for x, x2 in itertools.izip(self, other):    
+	    # XXX darf ich hier 'is' anstelle von '==' verwenden?
+	    # sonst knallt es beim tupeln vergleichen
+	    if x is x2:
+		return False
+	return True    
+		
+    def __ne__(self, other):
+        return not self == other
+        
+        
+class DictViewSet(DictView):
+    pass
+    
+    #def __and__(self):
+	#pass 
+    
+    #def __or__(self):
+	#pass  
+        
+    #def __xor__(self):
+	#pass
+    
+    #def __sub__(self):
+	#pass
+    
+    #def isdisjoint(self):
+	#pass
+    
+    
 
-
-class ItemsView(DictView):
+class ItemsView(DictViewSet):
     def __iter__(self):
         return ((node.name, node) for node in ValuesView(self.directory))
 
+    #def __contains__(self, other):
+	#for x in self: 
+	    #if x[0] is other:
+		#return False
+		#return True
+	#return True
+        
+        
+    #def __eq__(self, other):
+	#if not super(ItemsView, self).__eq__(other):
+	    #return False
+	#for x, x2 in itertools.izip(self, other):    
+	    #if x[0][0] != x2[0][0] or x[0][1] != x2[0][1]:
+		#return False
+	#return True
 
-class KeysView(DictView):
+class KeysView(DictViewSet):
     def __iter__(self):
         return iter(self.directory)
 
+    #def __eq__(self, other):
+	# call to the parent class for common equality checks
+	#if not super(KeysView, self).__eq__(other):
+	    #return False
+	# izip uses generators and does not create a third list    
+	#for dn, dn2 in itertools.izip(self, other):
+	    #if dn != dn2:
+		#return False
+	#return True   
+	
+	
 
 class ValuesView(DictView):
     def __iter__(self):
@@ -175,3 +239,17 @@ class ValuesView(DictView):
                 directory._search(directory.base_dn,
                                    ldap.SCOPE_SUBTREE, attrlist=[''])
                 if x[0][0] != directory.base_dn)
+
+    def __contains__(self, other):	
+	for x in self: 
+	    if x.name == other.name and x.attrs == other.attrs:
+		return True
+	return False  
+                    
+    #def __eq__(self, other):
+	#if not super(ValuesView, self).__eq__(other):
+	    #return False
+	#for node, node2 in itertools.izip(self, other):
+	    #if node != node2:
+		#return False
+	#return True
