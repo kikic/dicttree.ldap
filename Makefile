@@ -41,6 +41,9 @@ var-clean:
 check: var var-clean bin/nosetests
 	./bin/nosetests -v -w . --processes=4 ${ARGS}
 
+check-debug: var var-clean bin/nosetests
+	DEBUG=1 ./bin/nosetests -v -w . --ipdb --ipdb-failures ${ARGS}
+
 coverage: var var-clean bin/nosetests
 	rm -f .coverage
 	./bin/nosetests -v -w . --with-cov --cover-branches --cover-package=dicttree.ldap ${ARGS}
