@@ -48,14 +48,15 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         dn = 'cn=cn2,o=o'
         node = Node(name=dn, attrs=self.ADDITIONAL[dn])
         dn2 = 'cn=cn0,o=o'
-        node2 = Node(name=dn2, attrs={'objectClass': ['applicationProcess'], 'cn': ['cn0']})
+        node2 = Node(name=dn2, attrs={'objectClass': ['applicationProcess'],
+                                      'cn': ['cn0']})
         def addnode():
             self.dir[dn] = node
         def addexisting():
-	    self.dir[dn2] = node2
-            
+            self.dir[dn2] = node2
+
         addnode()
-        self.assertEquals(node, self.dir[dn])        
+        self.assertEquals(node, self.dir[dn])
         addexisting()
         self.assertEquals(node2, self.dir[dn2])
 
@@ -81,14 +82,15 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
                               (node.name for node in self.dir.values()))
 
     def test_items(self):
-        self.assertItemsEqual(((dn, dn) for dn in self.ENTRIES.keys()),
-                              ((dn, node.name) for dn, node in self.dir.items()))
+        self.assertItemsEqual(
+            ((dn, dn) for dn in self.ENTRIES.keys()),
+            ((dn, node.name)for dn, node in self.dir.items()))
 
     def test_len(self):
-	def delete():
+        def delete():
             del self.dir['cn=cn0,o=o']
-	
-	dn1 = 'cn=cn0,o=o'
+
+        dn1 = 'cn=cn0,o=o'
         node1 = Node(name=dn1, attrs=self.ENTRIES[dn1])
         def addnode1():
             self.dir[dn1] = node1
@@ -98,172 +100,174 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         def addnode2():
             self.dir[dn2] = node2
 
-	self.assertEqual(len(self.ENTRIES), len(self.dir))
-	delete()
-	self.assertTrue(len(self.ENTRIES) > len(self.dir))
+        self.assertEqual(len(self.ENTRIES), len(self.dir))
+        delete()
+        self.assertTrue(len(self.ENTRIES) > len(self.dir))
         addnode1()
         addnode2()
         self.assertTrue(len(self.ENTRIES) < len(self.dir))
-      
+
     def test_clear(self):
-	self.assertItemsEqual(self.ENTRIES.keys(), self.dir)
-	self.dir.clear()
-	self.assertEqual(0, len(self.dir))
-	self.assertEqual([('o=o', {})], self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['']))
-      
+        self.assertItemsEqual(self.ENTRIES.keys(), self.dir)
+        self.dir.clear()
+        self.assertEqual(0, len(self.dir))
+        self.assertEqual(
+            [('o=o', {})],
+            self.ldap.search_s('o=o', ldap.SCOPE_BASE, attrlist=['']))
+
     def test_copy(self):
-	dn = 'cn=cn0,o=o'
-	copy = self.dir.copy()
-	self.assertItemsEqual(self.ENTRIES.keys(), copy)
-	self.assertItemsEqual(self.dir, copy)
-	del self.dir[dn]
-	self.assertItemsEqual(self.dir, copy)
-      
+        dn = 'cn=cn0,o=o'
+        copy = self.dir.copy()
+        self.assertItemsEqual(self.ENTRIES.keys(), copy)
+        self.assertItemsEqual(self.dir, copy)
+        del self.dir[dn]
+        self.assertItemsEqual(self.dir, copy)
+
     def test_getkeydefault(self):
-	dn = 'cn=cn0,o=o'
-	fail = 'cn=fail,o=o'
-	default = 'HubbaBubba'
+        dn = 'cn=cn0,o=o'
+        fail = 'cn=fail,o=o'
+        default = 'HubbaBubba'
 
         self.assertEqual(self.dir[dn], self.dir.get(dn))
-	self.assertEqual(None, self.dir.get(fail))
-	self.assertEqual(default, self.dir.get(fail, default))
-      
+        self.assertEqual(None, self.dir.get(fail))
+        self.assertEqual(default, self.dir.get(fail, default))
+
     def test_popkeydefault(self):
-	dn = 'cn=cn0,o=o'
-	node = Node(name=dn, attrs=self.ENTRIES[dn])
-	fail = 'cn=fail,o=o'
-	default = 'HubbaBubba'
-	
-	self.assertEqual(node, self.dir.pop(dn))
-	self.assertFalse(dn in self.dir)
-	self.assertEqual(default, self.dir.pop(fail, default))
-	""" lambda turns lookup into a callable object. """
-	self.assertRaises(KeyError, lambda: self.dir.pop(fail))
-            
+        dn = 'cn=cn0,o=o'
+        node = Node(name=dn, attrs=self.ENTRIES[dn])
+        fail = 'cn=fail,o=o'
+        default = 'HubbaBubba'
+
+        self.assertEqual(node, self.dir.pop(dn))
+        self.assertFalse(dn in self.dir)
+        self.assertEqual(default, self.dir.pop(fail, default))
+        """ lambda turns lookup into a callable object. """
+        self.assertRaises(KeyError, lambda: self.dir.pop(fail))
+
     def test_popitem(self):
-	nodeTupel = self.dir.popitem()
-	self.assertTrue(nodeTupel[0] in self.ENTRIES.keys())
-	nodeTupel = self.dir.popitem()
-	self.assertTrue(nodeTupel[0] in self.ENTRIES.keys())
-	self.assertRaises(KeyError, lambda: self.dir.popitem())
-               
+        nodeTupel = self.dir.popitem()
+        self.assertTrue(nodeTupel[0] in self.ENTRIES.keys())
+        nodeTupel = self.dir.popitem()
+        self.assertTrue(nodeTupel[0] in self.ENTRIES.keys())
+        self.assertRaises(KeyError, lambda: self.dir.popitem())
+
     def test_setdefault(self):
-	dn = 'cn=cn0,o=o'
-	dn2 = 'cn=cn2,o=o'
-	node = Node(name=dn, attrs=self.ENTRIES[dn])	
-	node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
-	fail = 'cn=fail,o=o'
-	
-	self.assertEqual(node, self.dir.setdefault(dn))
-	self.assertEqual(node2, self.dir.setdefault(fail, node2))
-	# default has to be a Node
-	self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail))
-	self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail, fail))
-      
+        dn = 'cn=cn0,o=o'
+        dn2 = 'cn=cn2,o=o'
+        node = Node(name=dn, attrs=self.ENTRIES[dn])
+        node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
+        fail = 'cn=fail,o=o'
+
+        self.assertEqual(node, self.dir.setdefault(dn))
+        self.assertEqual(node2, self.dir.setdefault(fail, node2))
+        # default has to be a Node
+        self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail))
+        self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail, fail))
+
     def test_update(self):
-	dn = 'cn=cn0,o=o'
-	node = Node(name=dn, attrs={'objectClass': ['applicationProcess'], 'cn': ['cn0']})
-	dn2 = 'cn=cn2,o=o'
-	node2 = Node(name=dn2, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn2']} )
-	itemList = [(node.name, node), (node2.name, node2)]
-	dir2 = dict(itemList)
-	
-	self.assertEqual(None, self.dir.update(dir2))
-	self.assertEqual(node, self.dir[dn])
-	self.assertEqual(None, self.dir.update(itemList))
-	self.assertEqual(node2, self.dir[dn2])
-	
+        dn = 'cn=cn0,o=o'
+        node = Node(name=dn, attrs={'objectClass': ['applicationProcess'], 'cn': ['cn0']})
+        dn2 = 'cn=cn2,o=o'
+        node2 = Node(name=dn2, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn2']} )
+        itemList = [(node.name, node), (node2.name, node2)]
+        dir2 = dict(itemList)
+
+        self.assertEqual(None, self.dir.update(dir2))
+        self.assertEqual(node, self.dir[dn])
+        self.assertEqual(None, self.dir.update(itemList))
+        self.assertEqual(node2, self.dir[dn2])
+
     def test_viewlen(self):
-	def delete():
+        def delete():
             del self.dir['cn=cn0,o=o']
-	
-	dn1 = 'cn=cn0,o=o'
+
+        dn1 = 'cn=cn0,o=o'
         node1 = Node(name=dn1, attrs=self.ENTRIES[dn1])
         def addnode1():
             self.dir[dn1] = node1
-            
+
         dn2 = 'cn=cn2,o=o'
         node2 = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
         def addnode2():
             self.dir[dn2] = node2
 
-	self.assertEqual(len(self.ENTRIES.keys()), len(self.dir.keys()))
-	self.assertEqual(len(self.ENTRIES.items()), len(self.dir.items()))
-	self.assertEqual(len(self.ENTRIES.values()), len(self.dir.values()))
-	delete()
-	self.assertTrue(len(self.ENTRIES.keys()) > len(self.dir.keys()))
-	self.assertTrue(len(self.ENTRIES.items()) > len(self.dir.items()))
-	self.assertTrue(len(self.ENTRIES.values()) > len(self.dir.values()))
-	addnode1()
+        self.assertEqual(len(self.ENTRIES.keys()), len(self.dir.keys()))
+        self.assertEqual(len(self.ENTRIES.items()), len(self.dir.items()))
+        self.assertEqual(len(self.ENTRIES.values()), len(self.dir.values()))
+        delete()
+        self.assertTrue(len(self.ENTRIES.keys()) > len(self.dir.keys()))
+        self.assertTrue(len(self.ENTRIES.items()) > len(self.dir.items()))
+        self.assertTrue(len(self.ENTRIES.values()) > len(self.dir.values()))
+        addnode1()
         addnode2()
         self.assertTrue(len(self.ENTRIES.keys()) < len(self.dir.keys()))
         self.assertTrue(len(self.ENTRIES.items()) < len(self.dir.items()))
         self.assertTrue(len(self.ENTRIES.values()) < len(self.dir.values()))
-		
+
     def test_viewequal(self):
-	
-	dn = 'cn=cn0,o=o'
+
+        dn = 'cn=cn0,o=o'
         node = Node(name=dn, attrs=self.ENTRIES[dn])
         dn2 = 'cn=cn0,o=o'
         node2 = Node(name=dn2, attrs=self.ENTRIES[dn2])
         itemsList = ((dn, node), (dn2, node2))
         valuesList = (node, node2)
-        
+
         fail = 'cn=fail,o=o'
-	
-	keys = self.dir.keys()
-	items = self.dir.items()
-	values = self.dir.values()
-	self.assertTrue(keys == keys)
-	self.assertTrue(self.ENTRIES.keys() == keys)
-	self.assertFalse(self.ENTRIES.keys() != keys)
-	self.assertTrue(items == items)
-	
-	self.assertFalse(items == itemsList)
-	
-	self.assertTrue(items == itemsList)
-	self.assertFalse(items != itemsList)
-	self.assertTrue(values == values)
-	#self.assertTrue(values == valuesList)
-	#self.assertFalse(self.ENTRIES.values() != values)
-	
-	del self.dir['cn=cn0,o=o']
-	keys= self.dir.keys()
-	items = self.dir.items()
-	values = self.dir.values()
-	#self.assertTrue(self.ENTRIES.keys() != keys)
-	#self.assertTrue(self.ENTRIES.items() != items)
-	#self.assertTrue(self.ENTRIES.values() != values)
-	
-    
+
+        keys = self.dir.keys()
+        items = self.dir.items()
+        values = self.dir.values()
+        self.assertTrue(keys == keys)
+        self.assertTrue(self.ENTRIES.keys() == keys)
+        self.assertFalse(self.ENTRIES.keys() != keys)
+        self.assertTrue(items == items)
+
+        self.assertFalse(items == itemsList)
+
+        self.assertTrue(items == itemsList)
+        self.assertFalse(items != itemsList)
+        self.assertTrue(values == values)
+        #self.assertTrue(values == valuesList)
+        #self.assertFalse(self.ENTRIES.values() != values)
+
+        del self.dir['cn=cn0,o=o']
+        keys= self.dir.keys()
+        items = self.dir.items()
+        values = self.dir.values()
+        #self.assertTrue(self.ENTRIES.keys() != keys)
+        #self.assertTrue(self.ENTRIES.items() != items)
+        #self.assertTrue(self.ENTRIES.values() != values)
+
+
     #def test_notequal(self):
-	#pass
-	
+        #pass
+
     def test_viewcontains(self):
-	dn = 'cn=cn0,o=o'
-	fail = 'cn=fail,o=o'
+        dn = 'cn=cn0,o=o'
+        fail = 'cn=fail,o=o'
         node = Node(name=dn, attrs=self.ENTRIES[dn])
         item = (dn, node)
-        
-	#self.assertTrue(dn in self.dir.keys())
-	#self.assertFalse(dn not in self.dir.keys())
-	#self.assertTrue(item in self.dir.items())
-	#self.assertFalse(item not in self.dir.items())
-	#self.assertTrue(node in self.dir.values())
-	#self.assertFalse(node not in self.dir.values())
-	#self.assertFalse(fail in self.dir.keys())
-    
+
+        #self.assertTrue(dn in self.dir.keys())
+        #self.assertFalse(dn not in self.dir.keys())
+        #self.assertTrue(item in self.dir.items())
+        #self.assertFalse(item not in self.dir.items())
+        #self.assertTrue(node in self.dir.values())
+        #self.assertFalse(node not in self.dir.values())
+        #self.assertFalse(fail in self.dir.keys())
+
     #def test_and(self):
-	#pass
-    
+        #pass
+
     #def test_or(self):
-	#pass
-    
+        #pass
+
     #def test_xor(self):
-	#pass
-    
+        #pass
+
     #def test_sub(self):
-	#pass
-    
+        #pass
+
     #def test_isdisjoint(self):
-	#pass
+        #pass
