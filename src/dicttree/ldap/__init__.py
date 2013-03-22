@@ -9,8 +9,6 @@ import copy
 import itertools
 import collections
 
-import ipdb
-
 class Attributes(object):
     def __init__(self, node=None):
         if node is not None:
@@ -85,12 +83,14 @@ class Directory(object):
                 timeout=-1):
         """asynchronous ldap search returning a generator
         """
-        msgid = self._ldap.search(base, scope, filterstr=filterstr, attrlist=attrlist)
+        msgid = self._ldap.search(base, scope,
+                                  filterstr=filterstr, attrlist=attrlist)
         rtype = ldap.RES_SEARCH_ENTRY
         while rtype is ldap.RES_SEARCH_ENTRY:
             # Fetch results single file, the final result (usually)
             # has an empty field. <sigh>
-            (rtype, data) = self._ldap.result(msgid=msgid, all=0, timeout=timeout)
+            (rtype, data) = self._ldap.result(msgid=msgid, all=0,
+                                              timeout=timeout)
             if rtype is ldap.RES_SEARCH_ENTRY or data:
                 yield data
 
@@ -157,6 +157,9 @@ class DirView(object):
     def __init__(self, directory):
         self.directory = directory
 
+    def __contains__(self, other):
+        return other in (iter(self))
+
     def __len__(self):
         return sum(1 for x in iter(self))
 
@@ -166,8 +169,6 @@ class DirView(object):
         if len(self) != len(other):
             return False
         for x, x2 in itertools.izip(self, other):
-            #return (x, x2)
-            ipdb.set_trace()
             if x != x2:
                 return False
         return True
@@ -175,66 +176,16 @@ class DirView(object):
     def __ne__(self, other):
         return not self == other
 
-
 class DirViewSet(DirView, collections.Set):
-
-    # must implement contains as first method
-    def __contains__(self, other):
-        return other in iter(self)
-
-
-    #def __and__(self):
-        #pass
-
-    #def __or__(self):
-        #pass
-
-    #def __xor__(self):
-        #pass
-
-    #def __sub__(self):
-        #pass
-
-    #def isdisjoint(self):
-        #pass
-
-
+    pass
 
 class ItemsView(DirViewSet):
     def __iter__(self):
         return ((node.name, node) for node in ValuesView(self.directory))
 
-    def __contains__(self, other):
-        for x in self:
-            if x == other:
-                return True
-        return False
-
-
-    #def __eq__(self, other):
-        #if self is other:
-            #return True
-        #if len(self) != len(other):
-            #return False
-        #for x, x2 in itertools.izip(self, other):
-            #if x[0][0] != x2[0][0] or x[0][1] != x2[0][1]:
-                #return False
-        #return True
-
 class KeysView(DirViewSet):
     def __iter__(self):
         return iter(self.directory)
-
-    #def __eq__(self, other):
-        # call to the parent class for common equality checks
-        #if not super(KeysView, self).__eq__(other):
-            #return False
-        # izip uses generators and does not create a third list
-        #for dn, dn2 in itertools.izip(self, other):
-            #if dn != dn2:
-                #return False
-        #return True
-
 
 class ValuesView(DirView):
     def __iter__(self):
@@ -243,17 +194,3 @@ class ValuesView(DirView):
                 directory._search(directory.base_dn,
                                    ldap.SCOPE_SUBTREE, attrlist=[''])
                 if x[0][0] != directory.base_dn)
-
-    #def __contains__(self, other):
-        #for x in self:
-            #if x.name == other.name and x.attrs == other.attrs:
-                #return True
-        #return False
-
-    #def __eq__(self, other):
-        #if not super(ValuesView, self).__eq__(other):
-            #return False
-        #for node, node2 in itertools.izip(self, other):
-            #if node != node2:
-                #return False
-        #return True

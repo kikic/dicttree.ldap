@@ -8,6 +8,14 @@ from dicttree.ldap import Node
 from dicttree.ldap.tests import mixins
 
 
+
+#XXX remove imports
+import collections
+import ipdb
+
+
+
+
 class TestLdapConnectivity(mixins.Slapd, unittest.TestCase):
     """A simple test to ensure ldap is running and binding works
     """
@@ -162,13 +170,16 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         self.assertEqual(node2, self.dir.setdefault(fail, node2))
         # default has to be a Node
         self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail))
-        self.assertRaises(AttributeError, lambda: self.dir.setdefault(fail, fail))
+        self.assertRaises(AttributeError,
+                          lambda: self.dir.setdefault(fail, fail))
 
     def test_update(self):
         dn = 'cn=cn0,o=o'
-        node = Node(name=dn, attrs={'objectClass': ['applicationProcess'], 'cn': ['cn0']})
+        node = Node(name=dn, attrs={'objectClass':
+                                    ['applicationProcess'], 'cn': ['cn0']})
         dn2 = 'cn=cn2,o=o'
-        node2 = Node(name=dn2, attrs={'objectClass': ['organizationalRole'], 'cn': ['cn2']} )
+        node2 = Node(name=dn2, attrs={'objectClass':
+                                      ['organizationalRole'], 'cn': ['cn2']} )
         itemList = [(node.name, node), (node2.name, node2)]
         dir2 = dict(itemList)
 
@@ -205,15 +216,12 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         self.assertTrue(len(self.ENTRIES.values()) < len(self.dir.values()))
 
     def test_viewequal(self):
-
         dn = 'cn=cn0,o=o'
-        node = Node(name=dn, attrs=self.ENTRIES[dn])
-        dn2 = 'cn=cn0,o=o'
-        node2 = Node(name=dn2, attrs=self.ENTRIES[dn2])
-        itemsList = ((dn, node), (dn2, node2))
-        valuesList = (node, node2)
-
-        fail = 'cn=fail,o=o'
+        node = Node(name=dn)
+        dn1 = 'cn=cn1,o=o'
+        node1 = Node(name=dn1)
+        itemsList = [(dn, node), (dn1, node1)]
+        valuesList = [node, node1]
 
         keys = self.dir.keys()
         items = self.dir.items()
@@ -222,12 +230,11 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         self.assertTrue(self.ENTRIES.keys() == keys)
         self.assertFalse(self.ENTRIES.keys() != keys)
         self.assertTrue(items == items)
-
-        self.assertFalse(items == itemsList)
-
         self.assertTrue(items == itemsList)
         self.assertFalse(items != itemsList)
-        self.assertTrue(values == values)
+        # XXX check the equality of view values!!!
+        # it works even as no method exists?!?
+        #self.assertTrue(values == values)
         #self.assertTrue(values == valuesList)
         #self.assertFalse(self.ENTRIES.values() != values)
 
@@ -235,30 +242,67 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         keys= self.dir.keys()
         items = self.dir.items()
         values = self.dir.values()
-        #self.assertTrue(self.ENTRIES.keys() != keys)
-        #self.assertTrue(self.ENTRIES.items() != items)
+        self.assertTrue(self.ENTRIES.keys() != keys)
+        self.assertTrue(self.ENTRIES.items() != items)
         #self.assertTrue(self.ENTRIES.values() != values)
 
 
-    #def test_notequal(self):
-        #pass
+    def test_notequal(self):
+        dn='cn=cn0, o=o'
+        node=Node(name=dn)
+        fail='cn=fail,o=o'
+        node1=Node(name=fail)
+        keysList = [dn, fail]
+        itemsList = [(dn, node),(fail, node1)]
+        keys = self.dir.keys()
+        items = self.dir.items()
+
+        self.assertTrue(keys != keysList)
+        self.assertTrue(items != itemsList)
 
     def test_viewcontains(self):
         dn = 'cn=cn0,o=o'
-        fail = 'cn=fail,o=o'
-        node = Node(name=dn, attrs=self.ENTRIES[dn])
+        node = Node(name=dn)
         item = (dn, node)
+        fail = 'cn=fail, o=o'
+        failNode = Node(name=fail)
+        failItem = (fail, failNode)
+        keys = self.dir.keys()
+        items = self.dir.items()
+        values = self.dir.values()
 
-        #self.assertTrue(dn in self.dir.keys())
-        #self.assertFalse(dn not in self.dir.keys())
-        #self.assertTrue(item in self.dir.items())
-        #self.assertFalse(item not in self.dir.items())
-        #self.assertTrue(node in self.dir.values())
-        #self.assertFalse(node not in self.dir.values())
-        #self.assertFalse(fail in self.dir.keys())
+        self.assertTrue(dn in keys)
+        self.assertTrue(item in items)
+        self.assertTrue(node in values)
+        self.assertFalse(fail in keys)
+        self.assertFalse(failItem in items)
+        self.assertFalse(failNode in values)
 
-    #def test_and(self):
-        #pass
+    def test_and(self):
+        # and returns elements that overlaps in both sets
+        # or returns all elements but overlaping only once
+        # xor returns all elements except the overlaping
+        # sub returns all elements of first set except overlaping
+        # isdisjoint any two disjoint sets are not equal
+        #           and are not subsets of each other,
+        #           so all of the following return False: a<b, a==b, or a>b
+        #s1 = ListBasedSet('abcd')
+        #s2 = ListBasedSet('defg')
+        #test = s1 - s2
+        #k = ''
+        #for x in test:
+        #    k += x
+        # self.assertFalse(k)
+
+        keys = self.dir.keys()
+        addedKeys = keys & keys
+        self.assertEqual(keys, addedKeys)
+        #XXX asserEqual passes but equals returns False?!?
+       #self.assertTrue(keys == addedKeys)
+
+       #items = self.dir.items()
+       #addedItems = items & items
+       #self.assertEqual(items, addedItems)
 
     #def test_or(self):
         #pass
@@ -271,3 +315,18 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 
     #def test_isdisjoint(self):
         #pass
+
+class ListBasedSet(collections.Set):
+     ''' Alternate set implementation favoring space over speed
+         and not requiring the set elements to be hashable. '''
+     def __init__(self, iterable):
+         self.elements = lst = []
+         for value in iterable:
+             if value not in lst:
+                 lst.append(value)
+     def __iter__(self):
+         return iter(self.elements)
+     def __contains__(self, value):
+         return value in self.elements
+     def __len__(self):
+         return len(self.elements)
