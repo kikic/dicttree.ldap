@@ -177,7 +177,8 @@ class DirView(object):
         return not self == other
 
 class DirViewSet(DirView, collections.Set):
-    pass
+    def _from_iterable(self, iterable):
+        return set(iterable)
 
 class ItemsView(DirViewSet):
     def __iter__(self):

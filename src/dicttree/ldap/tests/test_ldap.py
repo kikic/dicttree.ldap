@@ -5,6 +5,8 @@ from itertools import chain
 
 from dicttree.ldap import Directory
 from dicttree.ldap import Node
+from dicttree.ldap import KeysView
+from dicttree.ldap import ItemsView
 from dicttree.ldap.tests import mixins
 
 
@@ -188,6 +190,8 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         self.assertEqual(None, self.dir.update(itemList))
         self.assertEqual(node2, self.dir[dn2])
 
+
+
     def test_viewlen(self):
         def delete():
             del self.dir['cn=cn0,o=o']
@@ -286,47 +290,117 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         # isdisjoint any two disjoint sets are not equal
         #           and are not subsets of each other,
         #           so all of the following return False: a<b, a==b, or a>b
-        #s1 = ListBasedSet('abcd')
-        #s2 = ListBasedSet('defg')
-        #test = s1 - s2
-        #k = ''
-        #for x in test:
-        #    k += x
-        # self.assertFalse(k)
+       # s1 = ListBasedSet('abcdd')
+       # s2 = ListBasedSet('ddefg')
+       # test = s1 | s2
+       # k = ''
+       # for x in test:
+       #     k += x
+       # self.assertFalse(k)
 
         keys = self.dir.keys()
-        addedKeys = keys & keys
-        self.assertEqual(keys, addedKeys)
-        #XXX asserEqual passes but equals returns False?!?
-       #self.assertTrue(keys == addedKeys)
+        andKeys = keys & keys
+        self.assertEqual(keys, andKeys)
+        self.assertTrue(keys == andKeys)
 
-       #items = self.dir.items()
-       #addedItems = items & items
-       #self.assertEqual(items, addedItems)
+        items = self.dir.items()
+        andItems = items & items
+        #XXX andItems has reversed element positions
+        # self.assertTrue(items == andItems)
 
-    #def test_or(self):
-        #pass
+    def test_or(self):
+        keysList = ['cn=cn0,o=o', 'cn=cn2,o=o']
+        keysResult = set(['cn=cn0,o=o', 'cn=cn1,o=o', 'cn=cn2,o=o'])
+        keys = self.dir.keys()
+        orKeys = keys | keysList
+        self.assertTrue(orKeys == keysResult)
 
-    #def test_xor(self):
-        #pass
+        dn = 'cn=cn0,o=o'
+        dn1 = 'cn=cn1,o=o'
+        dn2 = 'cn=cn2,o=o'
+        itemsList = ((dn, Node(name=dn)), (dn2, Node(name=dn2)))
+        itemsResult = set([(dn, Node(name=dn)), (dn1, Node(name=dn1)),
+                           (dn2, Node(name=dn2))])
+        items = self.dir.items()
+        orItems = items | itemsList
+        # XXX or uses chain and concats all elements for items ?!?
+        #self.assertTrue(orItems == itemsResult)
 
-    #def test_sub(self):
-        #pass
+    def test_xor(self):
+        dn2 = 'cn=cn2,o=o'
+        mockKeys = KeysView(directory=self.ENTRIES)
+        mockItems = ItemsView(directory=self.ENTRIES)
+        keysResult = set([dn2])
+        itemsResult = set([(dn2, Node(name=dn2))])
+        self.dir[dn2] = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
 
-    #def test_isdisjoint(self):
-        #pass
+        keys = self.dir.keys()
+        xorKeys = keys ^ keys
+        self.assertEqual(set(), xorKeys)
 
-class ListBasedSet(collections.Set):
-     ''' Alternate set implementation favoring space over speed
-         and not requiring the set elements to be hashable. '''
-     def __init__(self, iterable):
-         self.elements = lst = []
-         for value in iterable:
-             if value not in lst:
-                 lst.append(value)
-     def __iter__(self):
-         return iter(self.elements)
-     def __contains__(self, value):
-         return value in self.elements
-     def __len__(self):
-         return len(self.elements)
+        keys = self.dir.keys()
+        xorKeys = keys ^ mockKeys
+        self.assertEqual(xorKeys, keysResult)
+
+        items = self.dir.items()
+        xorItems = items ^ items
+        self.assertEqual(set(), xorItems)
+
+        # XXX dict object has no attribute _search
+        #xorItems = items ^ mockItems
+       #self.assertEqual(xorItems, itemsResult)
+
+    def test_sub(self):
+        dn2 = 'cn=cn2,o=o'
+        self.dir[dn2] = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
+        mockKeys = KeysView(directory=self.ENTRIES)
+        mockItems = ItemsView(directory=self.ENTRIES)
+        keysResult = set([dn2])
+        itemsResult = set([(dn2, Node(name=dn2))])
+
+        keys = self.dir.keys()
+        subKeys = keys - keys
+        self.assertEqual(set(), subKeys)
+
+        subKeys = keys - mockKeys
+        self.assertEqual(keysResult, subKeys)
+
+        items = self.dir.items()
+        subItems = items - items
+        self.assertEqual(set(), subItems)
+
+        #subItems = items - mockItems
+        #self.assertEqual(subItems, itemsResult)
+
+    def test_isdisjoint(self):
+        keys = self.dir.keys()
+        items = self.dir.items()
+        mockKeys = KeysView(directory=self.ADDITIONAL)
+        mockItems = ItemsView(directory=self.ADDITIONAL)
+
+        self.assertFalse(keys.isdisjoint(keys))
+        self.assertTrue(keys.isdisjoint(mockKeys))
+
+       # self.assertFalse(items.isdisjoint(items))
+       # self.assertTrue(items.isdisjoint(mockItems))
+
+
+# XXX rename mockKeys und mockItems cos it is a directory that is mocked
+# XXX define class MockDirectory(dict): -> for items
+# implement _search(*args, **kw) with a generator
+
+
+#class ListBasedSet(collections.Set):
+#     ''' Alternate set implementation favoring space over speed
+#         and not requiring the set elements to be hashable. '''
+#     def __init__(self, iterable):
+#         self.elements = lst = []
+#         for value in iterable:
+#             if value not in lst:
+#                 lst.append(value)
+#     def __iter__(self):
+#         return iter(self.elements)
+#     def __contains__(self, value):
+#         return value in self.elements
+#     def __len__(self):
+#         return len(self.elements)
