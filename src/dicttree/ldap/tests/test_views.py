@@ -13,14 +13,6 @@ import collections
 import ipdb
 
 
-class TestLdapConnectivity(mixins.Slapd, unittest.TestCase):
-    """A simple test to ensure ldap is running and binding works
-    """
-    def test_connectivity(self):
-        self.ldap.bind_s('cn=root,o=o', 'secret')
-        self.assertEqual(self.ldap.whoami_s(), 'dn:cn=root,o=o')
-
-
 class TestKeysView(mixins.Slapd, unittest.TestCase):
     ENTRIES = {
         'cn=cn0,o=o': (('cn', ['cn0']),
