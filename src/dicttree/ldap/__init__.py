@@ -9,6 +9,10 @@ import copy
 import itertools
 import collections
 
+
+import ipdb
+
+
 class Attributes(object):
     def __init__(self, node=None):
         if node is not None:
@@ -153,12 +157,27 @@ class Directory(object):
             self[dn] = node
         return None
 
+    def iterkeys(self):
+        return iter(self)
+
+    def itervalues(self):
+        return (Node(name=x[0][0], attrs=x[0][1]) for x in
+                self._search(self.base_dn,
+                                  ldap.SCOPE_SUBTREE, attrlist=[''])
+                if x[0][0] != self.base_dn)
+
+    def iteritems(self):
+        return ((node.name, node) for node in ValuesView(self))
+
 class DirView(object):
     def __init__(self, directory):
         self.directory = directory
 
     def __contains__(self, other):
-        return other in (iter(self))
+        for x in self:
+            if other == x:
+                return True
+        return False
 
     def __len__(self):
         return sum(1 for x in iter(self))
@@ -182,16 +201,12 @@ class DirViewSet(DirView, collections.Set):
 
 class ItemsView(DirViewSet):
     def __iter__(self):
-        return ((node.name, node) for node in ValuesView(self.directory))
+        return self.directory.iteritems()
 
 class KeysView(DirViewSet):
     def __iter__(self):
-        return iter(self.directory)
+        return self.directory.iterkeys()
 
 class ValuesView(DirView):
     def __iter__(self):
-        directory = self.directory
-        return (Node(name=x[0][0], attrs=x[0][1]) for x in
-                directory._search(directory.base_dn,
-                                   ldap.SCOPE_SUBTREE, attrlist=[''])
-                if x[0][0] != directory.base_dn)
+        return self.directory.itervalues()

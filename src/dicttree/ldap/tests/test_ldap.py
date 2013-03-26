@@ -1,8 +1,6 @@
 import ldap
 import unittest
 
-from itertools import chain
-
 from dicttree.ldap import Directory
 from dicttree.ldap import Node
 from dicttree.ldap import KeysView
@@ -14,7 +12,6 @@ from dicttree.ldap.tests import mixins
 #XXX remove imports
 import collections
 import ipdb
-
 
 
 
@@ -250,7 +247,6 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         self.assertTrue(self.ENTRIES.items() != items)
         #self.assertTrue(self.ENTRIES.values() != values)
 
-
     def test_notequal(self):
         dn='cn=cn0, o=o'
         node=Node(name=dn)
@@ -328,8 +324,10 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
 
     def test_xor(self):
         dn2 = 'cn=cn2,o=o'
-        mockKeys = KeysView(directory=self.ENTRIES)
-        mockItems = ItemsView(directory=self.ENTRIES)
+        testKeys = KeysView(directory=self.ENTRIES)
+        mockDir = MockDirectory(self.ENTRIES)
+        mockDir.base_dn = ''
+        testItems = ItemsView(directory=mockDir)
         keysResult = set([dn2])
         itemsResult = set([(dn2, Node(name=dn2))])
         self.dir[dn2] = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
@@ -339,56 +337,112 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
         self.assertEqual(set(), xorKeys)
 
         keys = self.dir.keys()
-        xorKeys = keys ^ mockKeys
+        xorKeys = keys ^ testKeys
         self.assertEqual(xorKeys, keysResult)
 
-        items = self.dir.items()
-        xorItems = items ^ items
-        self.assertEqual(set(), xorItems)
+        #items = self.dir.items()
+        #xorItems = items ^ items
+        #self.assertEqual(set(), xorItems)
 
-        # XXX dict object has no attribute _search
-        #xorItems = items ^ mockItems
-       #self.assertEqual(xorItems, itemsResult)
+        #ipdb.set_trace()
+        #xorItems = items ^ testItems
+        #self.assertEqual(xorItems, itemsResult)
 
     def test_sub(self):
         dn2 = 'cn=cn2,o=o'
         self.dir[dn2] = Node(name=dn2, attrs=self.ADDITIONAL[dn2])
-        mockKeys = KeysView(directory=self.ENTRIES)
-        mockItems = ItemsView(directory=self.ENTRIES)
+        testKeys = KeysView(directory=self.ENTRIES)
         keysResult = set([dn2])
-        itemsResult = set([(dn2, Node(name=dn2))])
+        #mockDir = MockDirectory({'a': (('a1', ['x1']),
+        #                               ('aa1', ['xx1'])),
+        #                         'b': (('b1', ['y1']),
+        #                               ('bb1', ['yy1']))
+        #                     })
+
+        mockDir = MockDirectory(self.ENTRIES)
+        mockDir.base_dn = ''
+        testItems = ItemsView(directory=mockDir)
+        #mockDir2 = MockDirectory({'a': (('a1', ['x1']),
+        #                                ('aa1', ['xx1']))})
+        mockDir2 = MockDirectory(self.ENTRIES)
+        mockDir2.base_dn = ''
+        testItems2 = ItemsView(directory=mockDir2)
+
+        dn1 = 'cn=cn1,o=o'
+        #itemsResult = set([(dn1,
+        #                    Node(name=dn1,
+        #                         attrs=
+        #                         {'objectClass': ['organizationalRole'],
+        #                          'cn': dn1}))])
 
         keys = self.dir.keys()
         subKeys = keys - keys
         self.assertEqual(set(), subKeys)
 
-        subKeys = keys - mockKeys
+        subKeys = keys - testKeys
         self.assertEqual(keysResult, subKeys)
 
         items = self.dir.items()
         subItems = items - items
         self.assertEqual(set(), subItems)
 
-        #subItems = items - mockItems
+        #del mockDir2[dn1]
+        #del mockDir2['a']
+        #subItems = testItems - testItems2
+        #ipdb.set_trace()
+        #self.assertEqual(subItems, set([('b', Node(name='b'))]))
+
+        #XXX even as nodes are equal, sets are not equal
+        # using assertSetEqual func,  see s1, s2
+
+        #item = iter(subItems).next()
+        #node = item[1]
+        #setFromView = set([(item[0], item[1])])
+        #node2 = Node(name=dn1,attrs=
+        #             {'objectClass': ['organizationalRole'],
+        #              'cn': 'cn1'})
+        #ipdb.set_trace()
+        #self.assertEqual(node, node2)
+        #self.assertEqual(item[0], dn1)
+        #self.assertEqual(setFromView, itemsResult)
+        #ipdb.set_trace()
+        #self.assertEqual(subItems, itemsResult)
+
+        #s1 = set([node])
+        #s2 = set([node2])
+        #self.assertEqual(s1, s2)
+
+        #XXX unable to test against nodes as attributes required to
+        #simulate search results and no attrs are returned from ldap
+        #subItems = items - testItems
         #self.assertEqual(subItems, itemsResult)
 
     def test_isdisjoint(self):
         keys = self.dir.keys()
         items = self.dir.items()
-        mockKeys = KeysView(directory=self.ADDITIONAL)
-        mockItems = ItemsView(directory=self.ADDITIONAL)
+        mockDir = MockDirectory(self.ADDITIONAL)
+        mockDir.base_dn = ''
+        testKeys = KeysView(directory=self.ADDITIONAL)
+        testItems = ItemsView(directory=mockDir)
 
         self.assertFalse(keys.isdisjoint(keys))
-        self.assertTrue(keys.isdisjoint(mockKeys))
+        self.assertTrue(keys.isdisjoint(testKeys))
 
-       # self.assertFalse(items.isdisjoint(items))
-       # self.assertTrue(items.isdisjoint(mockItems))
+        self.assertFalse(items.isdisjoint(items))
+        self.assertTrue(items.isdisjoint(testItems))
 
+class MockDirectory(dict):
+    def _search(self, *args, **kw):
+        for dn in self:
+            value = self[dn]
+            attrs = {value[1][0]: value[1][1], value[0][0]: dn}
+            yield [(dn, attrs)]
 
-# XXX rename mockKeys und mockItems cos it is a directory that is mocked
-# XXX define class MockDirectory(dict): -> for items
-# implement _search(*args, **kw) with a generator
-
+    def itervalues(self):
+        return (Node(name=x[0][0], attrs=x[0][1]) for x in
+                self._search(self.base_dn,
+                             ldap.SCOPE_SUBTREE, attrlist=[''])
+                if x[0][0] != self.base_dn)
 
 #class ListBasedSet(collections.Set):
 #     ''' Alternate set implementation favoring space over speed
