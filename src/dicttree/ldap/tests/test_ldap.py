@@ -1,10 +1,7 @@
 import ldap
 import unittest
 
-from dicttree.ldap import Directory
-from dicttree.ldap import Node
-from dicttree.ldap import KeysView
-from dicttree.ldap import ItemsView
+from dicttree.ldap._node import Node
 from dicttree.ldap.tests import mixins
 
 class TestLdapConnectivity(mixins.Slapd, unittest.TestCase):
