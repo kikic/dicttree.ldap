@@ -24,9 +24,6 @@ class TestKeysView(mixins.Slapd, unittest.TestCase):
                        ('objectClass', ['organizationalRole'])),
         }
 
-    def test_keys(self):
-        self.assertItemsEqual(self.ENTRIES.keys(), self.dir.keys())
-
     def test_viewlen(self):
         def delete():
             del self.dir['cn=cn0,o=o']
@@ -135,11 +132,6 @@ class TestItemsView(mixins.Slapd, unittest.TestCase):
         'cn=cn2,o=o': (('cn', ['cn2']),
                        ('objectClass', ['organizationalRole'])),
         }
-
-    def test_items(self):
-         self.assertItemsEqual(
-             ((dn, dn) for dn in self.ENTRIES.keys()),
-             ((dn, node.name)for dn, node in self.dir.items()))
 
     def test_viewlen(self):
         def delete():
@@ -360,10 +352,6 @@ class TestValuessView(mixins.Slapd, unittest.TestCase):
         'cn=cn2,o=o': (('cn', ['cn2']),
                        ('objectClass', ['organizationalRole'])),
         }
-
-    def test_values(self):
-        self.assertItemsEqual(self.ENTRIES.keys(),
-                              (node.name for node in self.dir.values()))
 
     def test_viewlen(self):
         def delete():

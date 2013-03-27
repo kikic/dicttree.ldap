@@ -70,6 +70,18 @@ class TestLDAPDirectory(mixins.Slapd, unittest.TestCase):
     def test_iter(self):
         self.assertItemsEqual(self.ENTRIES.keys(), self.dir)
 
+    def test_keys(self):
+        self.assertItemsEqual(self.ENTRIES.keys(), self.dir.keys())
+
+    def test_items(self):
+        self.assertItemsEqual(
+            ((dn, dn) for dn in self.ENTRIES.keys()),
+            ((dn, node.name)for dn, node in self.dir.items()))
+
+    def test_values(self):
+        self.assertItemsEqual(self.ENTRIES.keys(),
+                              (node.name for node in self.dir.values()))
+
     def test_len(self):
         def delete():
             del self.dir['cn=cn0,o=o']
