@@ -4,7 +4,6 @@ from dicttree.ldap._views import KeysView
 from dicttree.ldap._views import ItemsView
 from dicttree.ldap._views import ValuesView
 
-import ipdb
 
 class TestCase(unittest.TestCase):
     def setUp(self):
@@ -13,12 +12,8 @@ class TestCase(unittest.TestCase):
         self.dirSimilar = MockDirectory(b=2, c=3)
         self.dirDifferent = MockDirectory(c=3, d=4, e=5)
 
-    def tearDown(self):
-        pass
-
 class MockDirectory(dict):
-    def _search(self, *args, **kw):
-        pass
+    pass
 
 class TestKeysView(TestCase):
 
