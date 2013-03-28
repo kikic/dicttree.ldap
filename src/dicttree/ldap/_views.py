@@ -37,7 +37,7 @@ class ItemsView(DirViewSet):
 
 class KeysView(DirViewSet):
     def __iter__(self):
-        return self.directory.iterkeys()
+        return iter(self.directory)
 
 class ValuesView(DirView):
     def __iter__(self):

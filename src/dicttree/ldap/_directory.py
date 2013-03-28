@@ -128,10 +128,7 @@ class Directory(object):
             self[dn] = node
         return None
 
-    def iterkeys(self):
-        return iter(self)
-
-    def itervalues(self):
+   def itervalues(self):
         return (Node(name=x[0][0], attrs=x[0][1]) for x in
                 self._search(self.base_dn,
                                   ldap.SCOPE_SUBTREE, attrlist=[''])
