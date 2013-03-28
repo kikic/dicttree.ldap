@@ -32,7 +32,7 @@ class Directory(object):
             entry = self._ldap.search_s(dn, SCOPE_BASE)[0]
         except ldap.NO_SUCH_OBJECT:
             raise KeyError(dn)
-        node = Node(name=dn, attrs=entry[1])
+        node = Node(name=dn, attrs=entry[1], ldap=self._ldap)
         return node
 
     def __setitem__(self, dn, node):
@@ -128,8 +128,10 @@ class Directory(object):
             self[dn] = node
         return None
 
-   def itervalues(self):
-        return (Node(name=x[0][0], attrs=x[0][1]) for x in
+    iterkeys = __iter__
+
+    def itervalues(self):
+        return (Node(name=x[0][0], attrs=x[0][1], ldap=self._ldap) for x in
                 self._search(self.base_dn,
                                   ldap.SCOPE_SUBTREE, attrlist=[''])
                 if x[0][0] != self.base_dn)
