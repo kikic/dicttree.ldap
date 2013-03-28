@@ -1,35 +1,28 @@
 import ldap
 
 from ldap import SCOPE_BASE
-from ldap import SCOPE_SUBTREE
 from ldap import NO_SUCH_OBJECT
 
 import ipdb
 
 class Attributes(object):
-    def __init__(self, name=None, attrs=(), ldap=None):
-        self.name = name
+    def __init__(self, dn=None, attrs=(), ldap=None):
+        self.dn = dn
         self.attrs = attrs
         self._ldap = ldap
 
-    def __contains__(self, attrName):
-        try:
-            entry = self._ldap.search_s(self.name, SCOPE_BASE,
-                                        attrlist=[attrName])[0]
-            return len(entry[1]) > 0
-        except NO_SUCH_OBJECT:
-            raise KeyError(self.name)
+    def __contains__(self, name):
+        entry = self._ldap.search_s(self.dn, SCOPE_BASE,
+                                    attrlist=[name], attrsonly=True)[0]
+        return len(entry[1]) > 0
 
-    def __getitem__(self, attrName):
-        try:
-            entry = self._ldap.search_s(self.name, SCOPE_BASE,
-                                        attrlist=[attrName])[0]
-            return entry[1][attrName]
-        except NO_SUCH_OBJECT:
-            raise KeyError(self.name)
+    def __getitem__(self, name):
+        entry = self._ldap.search_s(self.dn, SCOPE_BASE,
+                                    attrlist=[name])[0]
+        return entry[1][name]
 
     def __iter__(self):
-        return (x for x in self._search(self.name, SCOPE_BASE))
+        return (name for name in self._search(self.dn, SCOPE_BASE))
 
     def _search(self, base, scope, filterstr='(objectClass=*)', attrlist=None,
                 timeout=-1):
@@ -67,7 +60,7 @@ class Node(object):
         # python-ldap would give us order. Needs to be investigated.
         #self.attrs = OrderedDict(attrs)
         #self.attrs = dict(attrs)
-        self.attrs = Attributes(name, attrs, ldap)
+        self.attrs = Attributes(dn=name, attrs=attrs, ldap=ldap)
         self._ldap = ldap
 
     def __eq__(self, other):
