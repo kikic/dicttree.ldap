@@ -21,25 +21,31 @@ class Attributes(object):
                                     attrlist=[name])[0]
         return entry[1][name]
 
+    def __setitem__(self, name, value):
+        action = ldap.MOD_ADD
+        if name in self:
+            action = ldap.MOD_REPLACE
+        self._ldap.modify_s(self.dn, [(action, name, value)])
+
+    def __delitem__(self, name, value=None):
+        """ delete attibutes value, if value is None
+        deletes all values for given attribute name """
+        self._ldap.modify_s(self.dn, [(ldap.MOD_DELETE, name, value)])
+
     def __iter__(self):
         return (name for name in self._search(self.dn, SCOPE_BASE))
 
     def _search(self, base, scope, filterstr='(objectClass=*)', attrlist=None,
                 timeout=-1):
-        """asynchronous ldap search returning a generator
+        """ldap search returning a generator on attributes
         """
-        msgid = self._ldap.search(base, scope,
+        entry = self._ldap.search_s(base, scope,
                                   filterstr=filterstr, attrlist=attrlist)
-        rtype = ldap.RES_SEARCH_ENTRY
-        while rtype is ldap.RES_SEARCH_ENTRY:
-            # Fetch results single file, the final result (usually)
-            # has an empty field. <sigh>
-            (rtype, data) = self._ldap.result(msgid=msgid, all=0,
-                                              timeout=timeout)
-            if rtype is ldap.RES_SEARCH_ENTRY or data:
-                for name in data[0][1]:
-                    yield name
+        for name in entry[0][1]:
+            yield name
 
+    def __len__(self):
+        return sum(1 for x in iter(self))
 
     def __eq__(self, other):
         # XXX quick fix, for old test cases

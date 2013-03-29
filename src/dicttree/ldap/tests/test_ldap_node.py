@@ -2,10 +2,6 @@ import unittest
 
 from dicttree.ldap.tests import mixins
 
-
-import ipdb
-
-
 class TestNodeAttrs(mixins.Slapd, unittest.TestCase):
     ENTRIES = {
         'cn=cn0,o=o': (('cn', ['cn0']),
@@ -22,13 +18,9 @@ class TestNodeAttrs(mixins.Slapd, unittest.TestCase):
         node = self.dir['cn=cn0,o=o']
         self.assertEqual(node.attrs['cn'], ['cn0'])
         self.assertEqual(node.attrs['objectClass'], ['organizationalRole'])
-        def fail(self):
+        def fail():
             node.attrs['fail']
-        #XXX result is ok, but the test is not
-        #self.assertRaises(KeyError, fail)
-
-        #XXX implement setitem first
-        #node.attrs[somenew] = 'abc'
+        self.assertRaises(KeyError, fail)
 
     def test_contains(self):
         node = self.dir['cn=cn0,o=o']
@@ -39,3 +31,19 @@ class TestNodeAttrs(mixins.Slapd, unittest.TestCase):
     def test_iter(self):
         node = self.dir['cn=cn0,o=o']
         self.assertItemsEqual(node.attrs, ['objectClass', 'cn'])
+
+    def test_del(self):
+        node = self.dir['cn=cn0,o=o']
+        node.attrs['description'] = 'abc'
+        self.assertItemsEqual(node.attrs, ['objectClass', 'cn', 'description'])
+        del node.attrs['description']
+        self.assertItemsEqual(node.attrs, ['objectClass', 'cn'])
+
+    def test_setitem(self):
+        node = self.dir['cn=cn0,o=o']
+        node.attrs['description'] = 'abc'
+        self.assertEqual(len(node.attrs), 3)
+        self.assertEqual(node.attrs['description'], ['abc'])
+        self.assertItemsEqual(node.attrs, ['objectClass', 'cn', 'description'])
+        node.attrs['description'] = 'aaa'
+        self.assertEqual(node.attrs['description'], ['aaa'])
