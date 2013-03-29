@@ -3,6 +3,10 @@ import ldap
 from ldap import SCOPE_BASE
 from ldap import NO_SUCH_OBJECT
 
+import copy
+
+
+
 import ipdb
 
 class Attributes(object):
@@ -33,7 +37,7 @@ class Attributes(object):
         self._ldap.modify_s(self.dn, [(ldap.MOD_DELETE, name, value)])
 
     def __iter__(self):
-        return (name for name in self._search(self.dn, SCOPE_BASE))
+        return (item[0] for item in self._search(self.dn, SCOPE_BASE))
 
     def _search(self, base, scope, filterstr='(objectClass=*)', attrlist=None,
                 timeout=-1):
@@ -42,20 +46,75 @@ class Attributes(object):
         entry = self._ldap.search_s(base, scope,
                                   filterstr=filterstr, attrlist=attrlist)
         for name in entry[0][1]:
-            yield name
+            yield (name, entry[0][1][name])
 
     def __len__(self):
         return sum(1 for x in iter(self))
 
     def __eq__(self, other):
         # XXX quick fix, for old test cases
-        return self.items() == dict(other.attrs).items()
+        return dict(self.attrs).items() == dict(other.attrs).items()
+
+    def keys(self):
+        return iter(self)
+
+    def values(self):
+        return (item[1] for item in self._search(self.dn, SCOPE_BASE))
 
     def items(self):
-        # XXX quick fix, for old test cases
-        return dict(self.attrs).items()
+        res = dict(self.attrs).items()
+        res2 = ((item[0], item[1]) for item in
+                self._search(self.dn, SCOPE_BASE))
+        #res = [('objectClass', ['organizationalRole']), ('cn', ['cn0'])]
+        #ipdb.set_trace()
+        return res
 
+#    def clear(self):
+#        for name in self.keys():
+#            del self[name]
 
+    def copy(self):
+        return copy.copy(self.attrs)
+
+    def get(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            return default
+
+    def pop(self, name, default=None):
+        try:
+            value = self[name]
+            del self[name]
+        except KeyError:
+            if default is None:
+                raise KeyError(name)
+            return default
+        return value
+
+#    def popitem(self):
+#        if not self:
+#          raise KeyError
+#        dn = next(iter(self))
+#        node = self[dn]
+#        del self[dn]
+#        return (dn, node)
+
+    def setdefault(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            self[name] = default
+            return default
+
+    def update(self, other):
+        try:
+            items = other.items()
+        except AttributeError:
+            items = other
+        for name, value in items:
+            self[name] = value
+        return None
 
 class Node(object):
     def __init__(self, name=None, attrs=(), ldap=None):
