@@ -1,9 +1,9 @@
 import itertools
 import collections
 
-class DirView(object):
-    def __init__(self, directory):
-        self.directory = directory
+class DictView(object):
+    def __init__(self, dictionary):
+        self.dictionary = dictionary
 
     def __contains__(self, other):
         for x in self:
@@ -27,18 +27,18 @@ class DirView(object):
     def __ne__(self, other):
         return not self == other
 
-class DirViewSet(DirView, collections.Set):
+class DictViewSet(DictView, collections.Set):
     def _from_iterable(self, iterable):
         return set(iterable)
 
-class ItemsView(DirViewSet):
+class ItemsView(DictViewSet):
     def __iter__(self):
-        return self.directory.iteritems()
+        return self.dictionary.iteritems()
 
-class KeysView(DirViewSet):
+class KeysView(DictViewSet):
     def __iter__(self):
-        return iter(self.directory)
+        return iter(self.dictionary)
 
-class ValuesView(DirView):
+class ValuesView(DictView):
     def __iter__(self):
-        return self.directory.itervalues()
+        return self.dictionary.itervalues()

@@ -2,6 +2,7 @@ import unittest
 
 from ldap import UNDEFINED_TYPE
 from ldap import PROTOCOL_ERROR
+
 from dicttree.ldap.tests import mixins
 from dicttree.ldap._node import Attributes
 

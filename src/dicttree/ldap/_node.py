@@ -37,16 +37,14 @@ class Attributes(object):
         self._ldap.modify_s(self.dn, [(ldap.MOD_DELETE, name, value)])
 
     def __iter__(self):
-        return (item[0] for item in self._search(self.dn, SCOPE_BASE))
+        return (item[0] for item in self._search())
 
-    def _search(self, base, scope, filterstr='(objectClass=*)', attrlist=None,
-                timeout=-1):
+    def _search(self, attrlist=['*']):
         """ldap search returning a generator on attributes
         """
-        entry = self._ldap.search_s(base, scope,
-                                  filterstr=filterstr, attrlist=attrlist)
-        for name in entry[0][1]:
-            yield (name, entry[0][1][name])
+        entry = self._ldap.search_s(self.dn, SCOPE_BASE, attrlist=attrlist)[0]
+        for name in entry[1]:
+            yield (name, entry[1][name])
 
     def __len__(self):
         return sum(1 for x in iter(self))
@@ -56,22 +54,27 @@ class Attributes(object):
         return dict(self.attrs).items() == dict(other.attrs).items()
 
     def keys(self):
-        return iter(self)
+        return KeysView(dictionary=self)
 
     def values(self):
-        return (item[1] for item in self._search(self.dn, SCOPE_BASE))
+        return ValuesView(dictionary=self)
 
     def items(self):
+        return ItemsView(dictionary=self)
+
+    def iterkeys(self):
+        return iter(self)
+
+    def itervalues(self):
+        return (item[1] for item in self._search())
+
+    def iteritems(self):
         res = dict(self.attrs).items()
-        res2 = ((item[0], item[1]) for item in
-                self._search(self.dn, SCOPE_BASE))
+        res2 = [(item[0], item[1]) for item in
+                self._search()]
         #res = [('objectClass', ['organizationalRole']), ('cn', ['cn0'])]
         #ipdb.set_trace()
         return res
-
-#    def clear(self):
-#        for name in self.keys():
-#            del self[name]
 
     def copy(self):
         return copy.copy(self.attrs)
@@ -91,14 +94,6 @@ class Attributes(object):
                 raise KeyError(name)
             return default
         return value
-
-#    def popitem(self):
-#        if not self:
-#          raise KeyError
-#        dn = next(iter(self))
-#        node = self[dn]
-#        del self[dn]
-#        return (dn, node)
 
     def setdefault(self, name, default=None):
         try:

@@ -70,13 +70,13 @@ class Directory(object):
                 yield data
 
     def items(self):
-        return ItemsView(directory=self)
+        return ItemsView(dictionary=self)
 
     def keys(self):
-        return KeysView(directory=self)
+        return KeysView(dictionary=self)
 
     def values(self):
-        return ValuesView(directory=self)
+        return ValuesView(dictionary=self)
 
     def __len__(self):
         return sum(1 for node in iter(self))
